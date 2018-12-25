@@ -1,0 +1,6 @@
+spacy
+https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-2.0.0/en_core_web_lg-2.0.0.tar.gz#egg=en-core-web-lg
+numpy
+scikit-learn
+Flask
+awsebcli==3.14.8
