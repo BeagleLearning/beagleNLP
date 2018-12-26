@@ -9,3 +9,5 @@
 # python
 virt
 __pycache__
+init
+.python-version
