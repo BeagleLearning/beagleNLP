@@ -22,6 +22,17 @@ def getMinSamples(corpus):
     return max(math.ceil(nDocs * FRACTION_IN_CLUSTER), 2)
 
 
+def createClusterMap(corpus, clusteringAnalysis):
+    clusters = {}
+    for i in range(len(corpus.documents)):
+        label = str(clusteringAnalysis.labels_[i])
+        doc = corpus.documents[i]
+        doc._.clusterLabel = label
+        clusters[label] = clusters.get(label, []).append(doc._.tag or doc)
+    corpus.clusters = clusters
+    return corpus
+
+
 def dbscan(corpus, eps=EPSILON, min_samples=None, metric="cosine"):
     if not min_samples:
         min_samples = getMinSamples(corpus)
@@ -29,9 +40,7 @@ def dbscan(corpus, eps=EPSILON, min_samples=None, metric="cosine"):
     repMatrix = makeRepresentationMatrix(corpus)
     dbscan = DBSCAN(eps=eps, min_samples=min_samples, metric=metric)
     clustering = dbscan.fit(repMatrix)
-    for i in range(len(corpus.documents)):
-        doc = corpus.documents[i]
-        doc._.clusterLabel = clustering.labels_[i]
+    corpus = createClusterMap(corpus, clustering)
     printClusters(corpus)
     return corpus
 
@@ -44,9 +53,7 @@ def dbscanWithWordVectorDistances(corpus, eps=None, min_samples=None):
         min_samples = getMinSamples(corpus)
     dbscan = DBSCAN(eps=eps, min_samples=min_samples, metric="precomputed")
     clustering = dbscan.fit(corpus.distanceMatrix)
-    for i in range(len(corpus.documents)):
-        doc = corpus.documents[i]
-        doc._.clusterLabel = clustering.labels_[i]
+    corpus = createClusterMap(corpus, clustering)
     printClusters(corpus)
     return corpus
 

@@ -25,13 +25,13 @@ def word2vec(token):
 @application.route("/cluster/", methods=["POST"])
 def clusterWords():
     body = request.data
-    clusters = None
+    corpus = None
     if body.keywords:
-        clusters = analysis.clusterQuestionsOnKeywords(
+        corpus = analysis.clusterQuestionsOnKeywords(
             body.questions, body.keywords)
     else:
-        clusters = analysis.clusterQuestions(body.questions)
-    return jsonify(clusters)
+        corpus = analysis.clusterQuestions(body.questions)
+    return jsonify(corpus.clusters)
 
 
 @application.errorhandler(BeagleError)
