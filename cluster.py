@@ -66,3 +66,14 @@ def printClusters(corpus):
         clusters[str(doc._.clusterLabel)] = clusterList
 
     print(clusters)
+
+
+def nameClusters(corpus):
+    # each cluster needs to get some sort of title.
+    # so I think we should extract all keywords
+    # then for each keyword, we look at which single one is closest to the
+    # center of the cluster.
+    # smallest average distance
+    for cluster in clusterList:
+        continue
+    return
