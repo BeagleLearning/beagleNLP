@@ -64,6 +64,10 @@ def dist(wordOne, wordTwo):
         raise Exception("Don't have both words")
     return one.similarity(two)
 
+
+def getVector(word):
+    return nlp(word).vector
+
 # a few things we want to try:
 # 1) given a set of keywords, cluster the questions around those keywords
 # 2) given a set of questions, cluster based on all words

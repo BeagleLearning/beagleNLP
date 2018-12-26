@@ -1,10 +1,6 @@
 from flask import Flask, request, jsonify
-import errors
 from beagleError import BeagleError
-import spacy
 import analysis
-
-nlp = spacy.load("./model/googlenews-spacy")
 
 # some bits of text for the page.
 headerText = '''
@@ -22,11 +18,8 @@ def indexRoute():
 
 @application.route("/word2vec/<token>", methods=["GET"])
 def word2vec(token):
-    nlpTokens = nlp(token)
-    if len(nlpTokens) > 0:
-        return jsonify(nlpTokens[0].vector.tolist())
-    else:
-        raise BeagleError(errors.NO_TOKEN_FOUND)
+    vector = analysis.getVector(token)
+    return jsonify(vector.tolist())
 
 
 @application.route("/cluster/", methods=["POST"])
