@@ -76,4 +76,4 @@ def nameClusters(corpus):
     # smallest average distance
     for cluster in clusterList:
         continue
-    return
+    return corpus
