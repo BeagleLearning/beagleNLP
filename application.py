@@ -10,9 +10,12 @@ endOfPage = '</body>\n</html>'
 # EB looks for an 'application' callable by default.
 application = Flask(__name__)
 
+application.logger.info("Flask app created!")
 
-@application.route("/")
+
+@application.route("/", methods=["GET"])
 def indexRoute():
+    application.logger.info("Index route accessed.")
     return headerText + "Welcome to the Beagle NLP API" + endOfPage
 
 
