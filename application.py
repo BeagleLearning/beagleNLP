@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from beagleError import BeagleError
 import analysis
 
@@ -17,6 +17,12 @@ application.logger.info("Flask app created!")
 def indexRoute():
     application.logger.info("Index route accessed.")
     return headerText + "Welcome to the Beagle NLP API" + endOfPage
+
+
+@application.route("/robots.txt", methods=["GET"])
+def robots():
+    print("ACCESSING")
+    return send_file("static/robots.txt")
 
 
 @application.route("/word2vec/<token>", methods=["GET"])
