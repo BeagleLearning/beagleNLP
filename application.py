@@ -1,7 +1,10 @@
 from flask import Flask, request, jsonify, send_file
 from beagleError import BeagleError
 import analysis
+import logging
 
+logging.basicConfig(filename='/opt/python/log/application.log',
+                    level=logging.DEBUG)
 # some bits of text for the page.
 headerText = '''
     <html>\n<head> <title>Beagle NLP API</title> </head>\n<body>'''
@@ -21,7 +24,6 @@ def indexRoute():
 
 @application.route("/robots.txt", methods=["GET"])
 def robots():
-    print("ACCESSING")
     return send_file("static/robots.txt")
 
 
@@ -33,13 +35,14 @@ def word2vec(token):
 
 @application.route("/cluster/", methods=["POST"])
 def clusterWords():
-    body = request.data
     corpus = None
-    if body.keywords:
+    application.logger.info("Clustering accessed.")
+    if request.form["keywords"]:
         corpus = analysis.clusterQuestionsOnKeywords(
-            body.questions, body.keywords)
+            request.form["questions"], request.form["keywords"])
     else:
-        corpus = analysis.clusterQuestions(body.questions)
+        application.logger.info("No keywords found.")
+        corpus = analysis.clusterQuestions(request.form["questions"])
     return jsonify(corpus.clusters)
 
 

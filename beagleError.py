@@ -1,5 +1,5 @@
-from flask import jsonify
 import errors
+
 
 class BeagleError(Exception):
     def __init__(self, errorCode, details):
