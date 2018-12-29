@@ -24,7 +24,7 @@ def clusterOnKeywords(questions, keywords):
         minDist = math.inf
         for kDoc in keywords.documents:
             dist = dd.directionalWordPairsDistance(kDoc, doc, "spacy")
-            print(f"{doc.text} to {kDoc.text}: {dist}")
+            # print(f"{doc.text} to {kDoc.text}: {dist}")
             if dist < minDist:
                 closestKeyword = kDoc
                 minDist = dist
@@ -35,5 +35,5 @@ def clusterOnKeywords(questions, keywords):
             clusters["uncategorized"].append(doc._.tag)
 
     questions.clusters = clusters
-    print(questions.clusters)
+    # print(questions.clusters)
     return questions

@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, send_file
 from beagleError import BeagleError
+import errors
 import analysis
 import logging
 
@@ -20,7 +21,6 @@ application.logger.info("Flask app created!")
 
 @application.route("/", methods=["GET"])
 def indexRoute():
-    application.logger.info("Index route accessed.")
     return headerText + "Welcome to the Beagle NLP API" + endOfPage
 
 
@@ -39,8 +39,6 @@ def word2vec(token):
 def clusterWords():
     corpus = None
     data = request.get_json()
-    application.logger.info("Clustering accessed.")
-    application.logger.info(f"Received information: {data}")
     if "questions" not in data:
         raise BeagleError(errors.MISSING_PARAMETERS_FOR_ROUTE)
     if "keywords" in data:

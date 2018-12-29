@@ -41,7 +41,6 @@ def createDistanceMatrix(corpus, distFunction):
             dist = distFunction(docOne, docTwo)
             corpus.distanceMatrix[i][j] = dist
             corpus.distanceMatrix[j][i] = dist
-    print(f"matrix is {corpus.distanceMatrix}")
     return corpus
 
 
