@@ -3,8 +3,10 @@ from beagleError import BeagleError
 import analysis
 import logging
 
-logging.basicConfig(filename='/opt/python/log/application.log',
-                    level=logging.DEBUG)
+logging.basicConfig(
+    filename='/opt/python/log/application.log',
+    level=logging.DEBUG,
+    format='[%(asctime)s] %(levelname)s in %(module)s: %(message)s')
 # some bits of text for the page.
 headerText = '''
     <html>\n<head> <title>Beagle NLP API</title> </head>\n<body>'''
@@ -36,13 +38,18 @@ def word2vec(token):
 @application.route("/cluster/", methods=["POST"])
 def clusterWords():
     corpus = None
+    data = request.get_json()
     application.logger.info("Clustering accessed.")
-    if request.form["keywords"]:
+    application.logger.info(f"Received information: {data}")
+    if "questions" not in data:
+        raise BeagleError(errors.MISSING_PARAMETERS_FOR_ROUTE)
+    if "keywords" in data:
+        application.logger.info("Keywords found!")
         corpus = analysis.clusterQuestionsOnKeywords(
-            request.form["questions"], request.form["keywords"])
+            data["questions"], data["keywords"])
     else:
         application.logger.info("No keywords found.")
-        corpus = analysis.clusterQuestions(request.form["questions"])
+        corpus = analysis.clusterQuestions(data["questions"])
     return jsonify(corpus.clusters)
 
 

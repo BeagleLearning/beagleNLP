@@ -28,7 +28,9 @@ def createClusterMap(corpus, clusteringAnalysis):
         label = str(clusteringAnalysis.labels_[i])
         doc = corpus.documents[i]
         doc._.clusterLabel = label
-        clusters[label] = clusters.get(label, []).append(doc._.tag or doc)
+        labelGroup = clusters.get(label, [])
+        labelGroup.append(doc._.tag or doc)
+        clusters[label] = labelGroup
     corpus.clusters = clusters
     return corpus
 

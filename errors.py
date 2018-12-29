@@ -11,3 +11,9 @@ details[NO_VECTORS_FOUND] = {
     "message": "No vectors were found for the words in these documents.",
     "statusCode": 404
 }
+
+MISSING_PARAMETERS_FOR_ROUTE = "MISSING_PARAMETERS_FOR_ROUTE"
+details[MISSING_PARAMETERS_FOR_ROUTE] = {
+    "message": "Missing parameters for this route",
+    "statusCode": 404
+}
