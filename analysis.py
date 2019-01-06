@@ -59,8 +59,8 @@ def clusterQuestionsOnKeywords(questions, keywords):
 def dist(wordOne, wordTwo):
     one = nlp(wordOne)
     two = nlp(wordTwo)
-    if (np.linalg.norm(np.array(one.vector)) == 0
-       or np.linalg.norm(np.array(two.vector)) == 0):
+    if (np.linalg.norm(one.vector) == 0
+       or np.linalg.norm(two.vector) == 0):
         raise Exception("Don't have both words")
     return one.similarity(two)
 

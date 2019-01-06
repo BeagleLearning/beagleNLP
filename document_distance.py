@@ -45,7 +45,7 @@ def createDistanceMatrix(corpus, distFunction):
 
 
 def distToClosestTokenInDoc(token, comparisonDoc, metric):
-    vec = np.array(token.vector)
+    vec = token.vector
     comparisonVectors = np.array([t.vector for t in comparisonDoc])
 
     if metric == "cosine":

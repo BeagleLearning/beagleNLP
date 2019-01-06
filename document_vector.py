@@ -33,7 +33,7 @@ def tfidfWeightedBagOfWords(corpus, withStops=False):
                 # adding 1 avoids issues when a word is in every doc,
                 # and therefore tfidf = 0
                 tfidf = 1 + doc._.tfidf[token.lemma_]
-                doc._.vector = doc._.vector + (np.array(token.vector) * tfidf)
+                doc._.vector = doc._.vector + (token.vector * tfidf)
 
         # normalize
         norm = np.linalg.norm(doc._.vector)
@@ -56,7 +56,7 @@ def tfidfWeightedVerbAndNoun(corpus):
         # TODO: consider if there is a faster way of doing this if we vectorize
         for token in doc:
             tfidf = 1 + doc._.tfidf[token.lemma_]
-            tokVec = np.array(token.vector) * tfidf
+            tokVec = token.vector * tfidf
             if token.pos_ == "VERB":
                 verb = verb + tokVec
             elif token.pos_ == "NOUN" or token.pos_ == "PROPN":
