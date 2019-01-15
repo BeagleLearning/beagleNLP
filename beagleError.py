@@ -2,13 +2,15 @@ import errors
 
 
 class BeagleError(Exception):
-    def __init__(self, errorCode, details):
+    def __init__(self, error_code, details={}):
         Exception.__init__(self)
-        self.message = errors.details[errorCode]["message"]
-        self.statusCode = errors.details[errorCode]["statusCode"]
+        self.message = errors.details[error_code]["message"]
+        self.status_code = errors.details[error_code]["status_code"]
+        self.code = error_code
         self.details = details
 
-    def toDict(self):
-        retVal = dict(self.details or {})
-        retVal.message = self.message
+    def to_dict(self):
+        retVal = dict(self.details)
+        retVal["message"] = self.message
+        retVal["code"] = self.code
         return retVal

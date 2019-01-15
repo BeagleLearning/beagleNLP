@@ -42,6 +42,10 @@ def clusterWords():
     data = request.get_json()
     if "questions" not in data:
         raise BeagleError(errors.MISSING_PARAMETERS_FOR_ROUTE)
+
+    if len(data["questions"]) < 2:
+        raise BeagleError(errors.TOO_FEW_QUESTIONS)
+
     if "keywords" in data:
         application.logger.info("Keywords found!")
         corpus = analysis.clusterQuestionsOnKeywords(
