@@ -1,4 +1,6 @@
 import math
+from beagleError import BeagleError
+import errors
 import numpy as np
 from sklearn.cluster import DBSCAN
 from spacy.tokens import Doc
@@ -56,6 +58,8 @@ def dbscanWithWordVectorDistances(corpus, eps=None, min_samples=None):
         eps = getEpsilonFromDistanceMatrix(corpus)
     if not min_samples:
         min_samples = getMinSamples(corpus)
+    if math.isnan(eps) or eps <= 0:
+        raise BeagleError(errors.NO_WORD_DATA)
     dbscan = DBSCAN(eps=eps, min_samples=min_samples, metric="precomputed")
     clustering = dbscan.fit(corpus.distanceMatrix)
     corpus = nameClusters(createClusterMap(corpus, clustering))

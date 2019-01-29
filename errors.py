@@ -24,3 +24,10 @@ details[TOO_FEW_QUESTIONS] = {
         are two or more.",
     "status_code": 400
 }
+
+NO_WORD_DATA = 2802
+details[NO_WORD_DATA] = {
+    "message": "We couldn't categorize these questions because we don't \
+    recognize the words in them.",
+    "status_code": 400
+}
