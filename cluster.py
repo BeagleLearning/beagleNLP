@@ -5,10 +5,10 @@ import numpy as np
 from sklearn.cluster import DBSCAN
 from spacy.tokens import Doc
 import document_distance as dd
-Doc.set_extension("clusterLabel", default=-1)
-EPSILON = 0.6
-FRACTION_IN_CLUSTER = 0.1
-STD_FRACTION = 1.5
+Doc.set_extension("clusterLabel", default=-1, force=True)
+EPSILON = 0.1
+FRACTION_IN_CLUSTER = 0.05
+STD_FRACTION = 0.5
 
 
 def makeRepresentationMatrix(corpus):
@@ -99,9 +99,13 @@ def nameClusters(corpus):
         centroid = findClusterCentroid(cluster)
         keywords = [t for doc in cluster for t in doc]
         keywordVecs = np.array([k.vector for k in keywords])
-        dists = np.linalg.norm(keywordVecs - centroid)
+        vecToCentroid = keywordVecs - centroid
+        dists = np.linalg.norm(vecToCentroid, axis=1)
+        print(f"dists {[[dists[i], keywords[i].text] for i in range(len(dists))]}")
         minIndex = np.argmin(dists)
-        print(f"New keyword is {keywords[minIndex].text}")
+        print(f"New keyword index {minIndex}")
+        print(f"New keyword {keywords[minIndex]}")
+        print(f"New keyword text {keywords[minIndex].text}")
         taggedClusters[keywords[minIndex].text] = cluster
     corpus.clusters = taggedClusters
     return corpus
