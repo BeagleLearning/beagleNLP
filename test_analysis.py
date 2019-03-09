@@ -1,4 +1,4 @@
-import analysis as a
+#import analysis as a
 
 SAMPLE_DOCS = ["hello world", "hi world", "nothing similar", "hey globe",
                "hello globe", "not similar", "not same", "antagonistic yoda"]
@@ -27,4 +27,5 @@ BIRD_QUESTIONS = [
     }
 ]
 
-corp = a.clusterQuestionsOnKeywords(BIRD_QUESTIONS, ["roadrunner", "coyote", "eat"])
+#corp = a.clusterQuestionsOnKeywords(BIRD_QUESTIONS,
+#                                    ["roadrunner", "coyote", "eat"])
