@@ -49,9 +49,9 @@ def distToClosestTokenInDoc(token, comparisonDoc, metric):
     comparisonVectors = np.array([t.vector for t in comparisonDoc])
 
     if metric == "cosine":
-        norms = np.linalg.norm(comparisonVectors, axis=1)
-        dists = np.abs(np.dot(comparisonVectors, vec)
-                       / (norms * np.linalg.norm(vec)))
+        norms = np.linalg.norm(comparisonVectors, axis=1) * np.linalg.norm(vec)
+        norms[norms == 0.0] = 1.0
+        dists = np.abs(np.dot(comparisonVectors, vec) / norms)
         # minInd = minIndex(dists.toList())
         minDist = np.min(dists)
         return minDist
@@ -83,7 +83,7 @@ def directionalWordPairsDistance(doc, comparison, metric):
                 and not token.is_oov):
             dist = distToClosestTokenInDoc(token, comparison, metric)
             # + 1 to avoid issues with tfidf being 0 (all docs have word)
-            tfidf = 1 + doc._.tfidf[token.lemma_]
+            tfidf = 1 + doc._.globalTfidf[token.lemma_]
             update = dist * tfidf
             total = total + update
             # record how many words we have considered for scaling purposes
@@ -97,7 +97,7 @@ def directionalWordPairsDistance(doc, comparison, metric):
     return total / numWordsHandled
 
 
-def wordPairsDistanceForDocs(docOne, docTwo, metric="spacy"):
+def wordPairsDistanceForDocs(docOne, docTwo, metric="cosine"):
     return (directionalWordPairsDistance(docOne, docTwo, metric)
             + directionalWordPairsDistance(docTwo, docOne, metric)) / 2.0
 
@@ -107,10 +107,10 @@ def wordPairsDistanceForDocs(docOne, docTwo, metric="spacy"):
 #
 
 
-def wordPairsDistanceMatrix(corpus, metric="spacy"):
-    distFunction = partial(wordPairsDistanceForDocs, metric="spacy")
+def wordPairsDistanceMatrix(corpus, metric="cosine"):
+    distFunction = partial(wordPairsDistanceForDocs, metric=metric)
     return createDistanceMatrix(corpus, distFunction)
 
 
-def simpleDistanceMatric(corpus):
-    return createDistanceMatrix(corpus, lambda one, two: one.simplicity(two))
+def simpleDistanceMatrix(corpus):
+    return createDistanceMatrix(corpus, lambda one, two: one.similarity(two))

@@ -31,7 +31,7 @@ nlp.add_pipe(tfidf.generateTextFrequency, name="text_frequency")
 def buildCorpus(docs):
     corpus = Corpus(docs, nlp)
     corpus = tfidf.tfidf(corpus)
-    return docVec.tfidfWeightedBagOfWords(corpus)
+    return docVec.tfidfWeightedBagOfWords(corpus, useGlobalIDF=True)
 
 
 def clusterDocuments(docs):
@@ -42,7 +42,7 @@ def clusterDocuments(docs):
 def buildTaggedCorpus(docs):
     corpus = TaggedQuestionCorpus(docs, nlp)
     corpus = tfidf.tfidf(corpus)
-    return docVec.tfidfWeightedBagOfWords(corpus)
+    return docVec.tfidfWeightedBagOfWords(corpus, useGlobalIDF=True)
 
 
 def clusterQuestions(docs):
@@ -67,32 +67,3 @@ def dist(wordOne, wordTwo):
 
 def getVector(word):
     return nlp(word).vector
-
-# a few things we want to try:
-# 1) given a set of keywords, cluster the questions around those keywords
-# 2) given a set of questions, cluster based on all words
-# 3) given a set of questions, cluster based on nouns
-# 4) given a set of questions, cluster based on nounds and verbs, concatenated
-# 5a) given a set of questions, select important keywords (using wordfreq?)
-# 5b) cluster the keywords to form topics
-# 5c) cluster questions based on where their keywords lie ("topics")
-# 6) given a set of questions, cluster strictly based on comon keywords, selecting
-#    a representative group of keywords somehow...
-
-# API definition:
-# keywords + questions => clustering around keywords
-# questions => suggested clustering, with tags
-
-# ideally these should both work by the same mechanism.
-# in other words, they should come up with the same clusters.
-
-# so how would we cluster around a keyword?
-# we'd get that keyword's vector, and then
-# check the distance from that keyword to the sum of the question words
-
-# so then if we were going to do that backwords... we are going to start with the questions...
-# For each keyword in all questions, cluster around them
-# We want to find a set of keywords that are good representations of the questions
-
-# so we are going to start with that. Let's build a clustering system
-# around the concept of tfidf weighted vectors

@@ -15,16 +15,22 @@ def findVectorLength(corpus):
     return 0
 
 
-def tfidfWeightedBagOfWords(corpus, withStops=False):
+def tfidfWeightedBagOfWords(corpus, withStops=False, useGlobalIDF=False):
     # NOTE: how could we use broader frequency information to our benefit?
 
     # figure out how long the vectors we are using are
     length = findVectorLength(corpus)
     if length == 0:
+        print("No vectors found when calculating bag-of-words vectors")
         raise BeagleError(errors.NO_VECTORS_FOUND)
 
     for doc in corpus.documents:
-        doc._.vector = np.zeros(300)
+        doc._.vector = np.zeros(length)
+        tfidfDict = None
+        if useGlobalIDF:
+            tfidfDict = doc._.globalTfidf
+        else:
+            tfidfDict = doc._.tfidf
         # TODO: consider if there is a faster way of doing this if we vectorize
         for token in doc:
             if token.is_stop and not withStops:
@@ -32,8 +38,8 @@ def tfidfWeightedBagOfWords(corpus, withStops=False):
             else:
                 # adding 1 avoids issues when a word is in every doc,
                 # and therefore tfidf = 0
-                tfidf = 1 + doc._.tfidf[token.lemma_]
-                doc._.vector = doc._.vector + (token.vector * tfidf)
+                tfidf = 1 + tfidfDict[token.lemma_]
+                doc._.vector = doc._.vector + (token.vector * tfidf * tfidf * tfidf)
 
         # normalize
         norm = np.linalg.norm(doc._.vector)
@@ -43,26 +49,23 @@ def tfidfWeightedBagOfWords(corpus, withStops=False):
     return corpus
 
 
-def tfidfWeightedVerbAndNoun(corpus):
+def tfidfWeightedVerbAndNoun(corpus, useGlobalIDF=False):
     # figure out how long the vectors we are using are
     length = findVectorLength(corpus)
     if length == 0:
         raise BeagleError(errors.NO_VECTORS_FOUND)
-
-    verb = np.zeros(length)
-    noun = np.zeros(length)
     for doc in corpus.documents:
-        doc._.vector = np.zeros(300)
+        tfidfDict = None
+        if useGlobalIDF:
+            tfidfDict = doc._.globalTfidf
+        else:
+            tfidfDict = doc._.tfidf
+        doc._.vector = np.zeros(length)
         # TODO: consider if there is a faster way of doing this if we vectorize
         for token in doc:
-            tfidf = 1 + doc._.tfidf[token.lemma_]
+            tfidf = 1 + tfidfDict[token.lemma_]
             tokVec = token.vector * tfidf
-            if token.pos_ == "VERB":
-                verb = verb + tokVec
-            elif token.pos_ == "NOUN" or token.pos_ == "PROPN":
-                noun = noun + tokVec
-
-    # combine
-    doc._.vector = np.concatenate((verb, noun))
+            if token.pos_ == "VERB" or token.pos_ == "NOUN" or token.pos_ == "PROPN":
+                doc._.vector = doc._.vector + tokVec
 
     return corpus

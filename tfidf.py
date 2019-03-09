@@ -1,10 +1,11 @@
 import math
 from spacy.tokens import Doc
+from wordfreq import word_frequency
 Doc.set_extension("textFrequency", default={})
 Doc.set_extension("tfidf", default={})
+Doc.set_extension("globalTfidf", default={})
 
 
-# used during the pipeline of document processing to generate frequencies
 def generateTextFrequency(doc):
     # count the number of occurances of each lemma in the doc
     lemmaList = [token.lemma_ for token in doc]
@@ -16,11 +17,21 @@ def generateTextFrequency(doc):
     return doc
 
 
+def getGlobalIDF(lemma):
+    globalDF = word_frequency(lemma, "en")
+    if globalDF == 0:
+        globalDF = math.pow(1, -9)
+    return -math.log(globalDF)
+
+
 def perDocumentTfidf(corpus):
     def calculateTfidf(doc):
         doc._.tfidf = {}
+        doc._.globalTfidf = {}
         for lemma in doc._.textFrequency:
             doc._.tfidf[lemma] = doc._.textFrequency[lemma] * corpus.idf[lemma]
+            doc._.globalTfidf[lemma] = doc._.textFrequency[lemma] * \
+                getGlobalIDF(lemma)
         return doc
 
     corpus.documents = [calculateTfidf(d) for d in corpus.documents]
