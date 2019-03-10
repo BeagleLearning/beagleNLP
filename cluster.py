@@ -6,7 +6,7 @@ from sklearn.cluster import DBSCAN
 from spacy.tokens import Doc
 import document_distance as dd
 Doc.set_extension("clusterLabel", default=-1, force=True)
-EPSILON = 0.1
+EPSILON = 0.25
 FRACTION_IN_CLUSTER = 0.05
 STD_FRACTION = 1.0
 

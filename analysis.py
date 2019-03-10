@@ -49,7 +49,7 @@ def buildTaggedCorpus(docs):
 
 def clusterQuestions(docs):
     corpus = buildTaggedCorpus(docs)
-    return cluster.dbscanWithWordVectorDistances(corpus)
+    return cluster.dbscan(corpus)
 
 
 def clusterQuestionsOnKeywords(questions, keywords):
