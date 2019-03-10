@@ -97,14 +97,12 @@ def nameClusters(corpus):
             taggedClusters["uncategorized"] = cluster
             continue
         centroid = findClusterCentroid(cluster)
-        keywords = [t for doc in cluster for t in doc]
+        keywords = [t for doc in cluster for t in doc if not t.is_oov and not t.is_stop]
         keywordVecs = np.array([k.vector for k in keywords])
         vecToCentroid = keywordVecs - centroid
         dists = np.linalg.norm(vecToCentroid, axis=1)
         print(f"dists {[[dists[i], keywords[i].text] for i in range(len(dists))]}")
         minIndex = np.argmin(dists)
-        print(f"New keyword index {minIndex}")
-        print(f"New keyword {keywords[minIndex]}")
         print(f"New keyword text {keywords[minIndex].text}")
         taggedClusters[keywords[minIndex].text] = cluster
     corpus.clusters = taggedClusters
