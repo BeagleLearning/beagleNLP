@@ -18,6 +18,10 @@ def findVectorLength(corpus):
 def tfidfWeightedBagOfWords(corpus, withStops=False, useGlobalIDF=False):
     # NOTE: how could we use broader frequency information to our benefit?
 
+    # check that there are some words
+    if len(corpus.documents) == 0:
+        return corpus
+
     # figure out how long the vectors we are using are
     length = findVectorLength(corpus)
     if length == 0:
@@ -38,8 +42,8 @@ def tfidfWeightedBagOfWords(corpus, withStops=False, useGlobalIDF=False):
             else:
                 # adding 1 avoids issues when a word is in every doc,
                 # and therefore tfidf = 0
-                tfidf = 1 + tfidfDict[token.lemma_]
-                doc._.vector = doc._.vector + (token.vector * tfidf * tfidf * tfidf)
+                tfidf = tfidfDict[token.lemma_]
+                doc._.vector = doc._.vector + (token.vector * tfidf * tfidf)
 
         # normalize
         norm = np.linalg.norm(doc._.vector)
@@ -50,10 +54,15 @@ def tfidfWeightedBagOfWords(corpus, withStops=False, useGlobalIDF=False):
 
 
 def tfidfWeightedVerbAndNoun(corpus, useGlobalIDF=False):
+    # check that there are some words
+    if len(corpus.documents) == 0:
+        return corpus
+
     # figure out how long the vectors we are using are
     length = findVectorLength(corpus)
     if length == 0:
         raise BeagleError(errors.NO_VECTORS_FOUND)
+
     for doc in corpus.documents:
         tfidfDict = None
         if useGlobalIDF:
@@ -63,7 +72,7 @@ def tfidfWeightedVerbAndNoun(corpus, useGlobalIDF=False):
         doc._.vector = np.zeros(length)
         # TODO: consider if there is a faster way of doing this if we vectorize
         for token in doc:
-            tfidf = 1 + tfidfDict[token.lemma_]
+            tfidf = tfidfDict[token.lemma_]
             tokVec = token.vector * tfidf
             if token.pos_ == "VERB" or token.pos_ == "NOUN" or token.pos_ == "PROPN":
                 doc._.vector = doc._.vector + tokVec
