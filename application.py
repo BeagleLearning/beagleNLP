@@ -46,8 +46,9 @@ def clusterWords():
     if len(data["questions"]) < 2:
         raise BeagleError(errors.TOO_FEW_QUESTIONS)
 
-    if "keywords" in data:
-        application.logger.info("Keywords found!")
+    application.logger.info(f"Questions: {data['questions']}")
+    if "keywords" in data and data['keywords'] is not None:
+        application.logger.info(f"Keywords found! {data['keywords']}")
         corpus = analysis.clusterQuestionsOnKeywords(
             data["questions"], data["keywords"])
     else:

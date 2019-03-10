@@ -5,6 +5,13 @@ MAX_DOC_DIST = 0.25
 
 
 def clusterOnKeywords(questions, keywords):
+    # no keywords - leave everything undefined
+    if len(keywords.documents) == 0:
+        clusters = {}
+        clusters["uncategorized"] = questions.documents
+        questions.clusters = clusters
+        return questions
+
     # measure dist from each doc to each keyword
     # for each document, take a tf-weighted distance to each keyword
     # group with the closest keyword. But we have to figure out how to
@@ -20,8 +27,12 @@ def clusterOnKeywords(questions, keywords):
         closestKeyword = None
         minDist = math.inf
         for kDoc in keywords.documents:
-            dist = dd.directionalWordPairsDistance(kDoc, doc, "spacy")
-            # print(f"{doc.text} to {kDoc.text}: {dist}")
+            if not keywords.atLeastOneTokenKnown(kDoc):
+                # skip this one if the document does not have any tokens we
+                # know. In that case we can't make an accurate distance measure.
+                continue
+
+            dist = dd.directionalWordPairsDistance(kDoc, doc, "cosine")
             if dist < minDist:
                 closestKeyword = kDoc
                 minDist = dist
@@ -32,7 +43,6 @@ def clusterOnKeywords(questions, keywords):
             clusters["uncategorized"].append(doc)
 
     questions.clusters = clusters
-    # print(questions.clusters)
     return questions
 
 
