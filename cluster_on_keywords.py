@@ -1,7 +1,7 @@
 import math
 import document_distance as dd
 
-MAX_DOC_DIST = 0.75
+MAX_DOC_DIST = 1.5
 
 
 def clusterOnKeywords(questions, keywords):
@@ -37,6 +37,7 @@ def clusterOnKeywords(questions, keywords):
                 closestKeyword = kDoc
                 minDist = dist
 
+        print(f"min dist is {minDist}")
         if minDist < MAX_DOC_DIST:
             clusters[closestKeyword.text].append(doc)
         else:

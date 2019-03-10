@@ -27,12 +27,13 @@ def distToClosestTokenInDoc(token, comparisonDoc, metric):
         norms = np.linalg.norm(comparisonVectors, axis=1) * np.linalg.norm(vec)
         norms[norms == 0.0] = 1.0
         dot = np.dot(comparisonVectors, vec)
-        #dotText = [[comparisonDoc[i].text, dot[i]] for i in range(len(comparisonDoc))]
-        #print(f"dot: {dotText}")
+        dotText = [[comparisonDoc[i].text, dot[i]] for i in range(len(comparisonDoc))]
+        print(f"dot: {dotText}")
         dists = np.abs(dot / norms)
         minInd = np.argmax(dists)
-        #print(f"{token} matched with {comparisonDoc[minInd].text}")
+        print(f"{token} matched with {comparisonDoc[minInd].text}")
         maxDist = np.max(dists)
+        print(f"final dist {1 - maxDist}")
         return 1 - maxDist
     elif metric == "euclidean":
         dists = np.linalg.norm(comparisonVectors - vec, axis=1)
@@ -62,7 +63,6 @@ def directionalWordPairsDistance(doc, comparison, metric):
                 and not token.is_oov):
             dist = distToClosestTokenInDoc(token, comparison, metric)
             # + 1 to avoid issues with tfidf being 0 (all docs have word)
-            # in this case
             tfidf = 1 + doc._.globalTfidf[token.lemma_]
             update = dist * tfidf
             total = total + update
