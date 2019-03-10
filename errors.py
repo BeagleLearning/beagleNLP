@@ -31,3 +31,9 @@ details[NO_WORD_DATA] = {
     recognize the words in them.",
     "status_code": 400
 }
+
+UNKNOWN_KEYWORDS = 2803
+details[UNKNOWN_KEYWORDS] = {
+    "message": "Sorry, we don't know the words you're trying to cluster around.",
+    "status_code": 400
+}

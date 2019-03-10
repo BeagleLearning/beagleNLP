@@ -15,6 +15,8 @@
 
 import numpy as np
 import spacy
+from errors import UNKNOWN_KEYWORDS
+from beagleError import BeagleError
 from corpus import Corpus
 from tagged_question_corpus import TaggedQuestionCorpus
 import tfidf as tfidf
@@ -53,6 +55,10 @@ def clusterQuestions(docs):
 def clusterQuestionsOnKeywords(questions, keywords):
     questionsCorpus = buildTaggedCorpus(questions)
     keywordsCorpus = buildCorpus(keywords)
+    #removed = keywordsCorpus.removeUnknownDocs()
+    #if removed:
+    #   raise BeagleError(UNKNOWN_KEYWORDS)
+    #else:
     return clusterOnKeywords(questionsCorpus, keywordsCorpus)
 
 
