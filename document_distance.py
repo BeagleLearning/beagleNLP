@@ -26,10 +26,14 @@ def distToClosestTokenInDoc(token, comparisonDoc, metric):
     if metric == "cosine":
         norms = np.linalg.norm(comparisonVectors, axis=1) * np.linalg.norm(vec)
         norms[norms == 0.0] = 1.0
-        dists = np.abs(np.dot(comparisonVectors, vec) / norms)
-        minInd = np.argmin(dists)
-        minDist = np.min(dists)
-        return minDist
+        dot = np.dot(comparisonVectors, vec)
+        #dotText = [[comparisonDoc[i].text, dot[i]] for i in range(len(comparisonDoc))]
+        #print(f"dot: {dotText}")
+        dists = np.abs(dot / norms)
+        minInd = np.argmax(dists)
+        #print(f"{token} matched with {comparisonDoc[minInd].text}")
+        maxDist = np.max(dists)
+        return 1 - maxDist
     elif metric == "euclidean":
         dists = np.linalg.norm(comparisonVectors - vec, axis=1)
         # minInd = np.argmin(dists)

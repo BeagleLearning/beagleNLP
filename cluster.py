@@ -8,7 +8,7 @@ import document_distance as dd
 Doc.set_extension("clusterLabel", default=-1, force=True)
 EPSILON = 0.1
 FRACTION_IN_CLUSTER = 0.05
-STD_FRACTION = 0.5
+STD_FRACTION = 1.0
 
 
 def makeRepresentationMatrix(corpus):

@@ -1,7 +1,7 @@
 import math
 import document_distance as dd
 
-MAX_DOC_DIST = 0.25
+MAX_DOC_DIST = 0.5
 
 
 def clusterOnKeywords(questions, keywords):

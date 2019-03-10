@@ -9,6 +9,7 @@ class TaggedQuestionCorpus(Corpus):
         self.documents = []
         if self._rawDocs and self._nlp:
             for doc in self._rawDocs:
+                doc["question"] = doc["question"].replace("\n", "")
                 processedDoc = self._nlp(doc["question"])
                 processedDoc._.tag = doc["id"]
                 self.documents.append(processedDoc)
