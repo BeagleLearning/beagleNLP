@@ -6,7 +6,7 @@ import logging
 from build_tag_cluster import buildTagCluster
 
 logging.basicConfig(
-    #filename='/opt/python/log/application.log',
+    filename='/opt/python/log/application.log',
     level=logging.DEBUG,
     format='[%(asctime)s] %(levelname)s in %(module)s: %(message)s')
 # some bits of text for the page.
