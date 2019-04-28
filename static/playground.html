@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta http-equiv="X-UA-Compatible" content="ie=edge" />
+		<script src="https://cdn.jsdelivr.net/npm/vue"></script>
+		<link
+			rel="stylesheet"
+			href="//fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic"
+		/>
+		<link rel="stylesheet" href="//cdn.rawgit.com/necolas/normalize.css/master/normalize.css" />
+		<link
+			rel="stylesheet"
+			href="//cdn.rawgit.com/milligram/milligram/master/dist/milligram.min.css"
+		/>
+		<title>Beagle NLP Playground</title>
+	</head>
+	<body>
+		<style>
+			body {
+				max-width: 100vw;
+			}
+			.container.fluid {
+				max-width: 100%;
+				padding-top: 5vh;
+			}
+			.cluster-container {
+				margin-bottom: 25px;
+			}
+			.tag > h5 > span {
+				background-color: #ccc;
+				padding: 5px 10px;
+				border-radius: 8px;
+			}
+			.scrollable {
+				max-height: 100vh;
+				overflow: scroll;
+			}
+		</style>
+
+		<div id="app">
+			<div class="container fluid">
+				<div class="row">
+					<div class="column">
+						<div class="container">
+							<h1>Questions</h1>
+
+							<div>
+								<ol>
+									<li v-for="qn in questions">
+										{{ qn.question }}
+									</li>
+								</ol>
+							</div>
+
+							<label for="questionField">Question Input</label>
+							<textarea
+								placeholder="Enter question here"
+								id="questionField"
+							></textarea>
+							<input
+								class="button-primary"
+								type="submit"
+								v-on:click="clusterQuestions"
+								value="Post Question"
+							/>
+						</div>
+					</div>
+					<div class="column">
+						<div id="v-for-object" class="container scrollable">
+							<h1>Clusters</h1>
+
+							<div v-for="(cluster, key) in clusters" class="cluster-container">
+								<div class="tag">
+									<h5>
+										<span>{{ key }}</span>
+									</h5>
+								</div>
+								<ul>
+									<li v-for="questionId in cluster">
+										{{ questions.find(qn => qn.id === questionId).question }}
+									</li>
+								</ul>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<script>
+			const loc = window.location;
+			const qnObj = { id: 0, question: "" };
+			const url = loc.protocol + "//" + loc.host + "/cluster/";
+			var app = new Vue({
+				el: "#app",
+				data: {
+					questions: [
+						{ id: 0, question: "first question here" },
+						{ id: 1, question: "second question here" },
+						{ id: 2, question: "and another one here" },
+						{ id: 3, question: "randomized testing happened here" }
+					],
+					clusters: {}
+				},
+				methods: {
+					clusterQuestions: function() {
+						const _this = this;
+						const qnVal = document.getElementById("questionField").value;
+						if (qnVal.length > 0) {
+							const qn = Object.assign({}, qnObj);
+							qn["question"] = qnVal;
+							qn["id"] = this.questions.length;
+							this.questions.push(qn);
+							document.getElementById("questionField").value = "";
+						}
+						
+						var xhr = new XMLHttpRequest();
+						xhr.withCredentials = true;
+						xhr.addEventListener("readystatechange", function() {
+							if (this.readyState === 4) {
+								_this.clusters = Object.assign({}, JSON.parse(this.responseText));
+								// console.log(this.responseText);
+							}
+						});
+						xhr.open("POST", url);
+						xhr.setRequestHeader("Content-Type", "application/json");
+						xhr.send(JSON.stringify({ questions: this.questions }));
+					}
+				}
+			});
+		</script>
+	</body>
+</html>
