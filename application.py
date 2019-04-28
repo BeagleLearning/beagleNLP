@@ -5,10 +5,12 @@ import analysis
 import logging
 from build_tag_cluster import buildTagCluster
 
-logging.basicConfig(
-    filename='/opt/python/log/application.log',
-    level=logging.DEBUG,
-    format='[%(asctime)s] %(levelname)s in %(module)s: %(message)s')
+from tfidf import calc_keywords
+
+# logging.basicConfig(
+#     filename='/opt/python/log/application.log',
+#     level=logging.DEBUG,
+#     format='[%(asctime)s] %(levelname)s in %(module)s: %(message)s')
 # some bits of text for the page.
 headerText = '''
     <html>\n<head> <title>Beagle NLP API</title> </head>\n<body>'''
@@ -24,6 +26,9 @@ application.logger.info("Flask app created!")
 def indexRoute():
     return headerText + "Welcome to the Beagle NLP API" + endOfPage
 
+@application.route("/playground", methods=["GET"])
+def playground():
+    return send_file("static/playground.html")
 
 @application.route("/robots.txt", methods=["GET"])
 def robots():
@@ -55,6 +60,14 @@ def clusterWords():
     else:
         application.logger.info("No keywords found.")
         corpus = analysis.clusterQuestions(question_list)
+        print("corpus.clusters.item")
+        print(corpus.clusters)
+        allquestions = [q["question"] for q in question_list]
+        for key, questionsList in corpus.clusters.items():
+            print(calc_keywords([q.text for q in questionsList], allquestions))
+            # print()
+
+        print("\n")
     return jsonify(buildTagCluster(corpus))
 
 

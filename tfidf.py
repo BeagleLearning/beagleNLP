@@ -1,6 +1,13 @@
 import math
 from spacy.tokens import Doc
 from wordfreq import word_frequency
+
+from spacy.lang.en import STOP_WORDS
+from sklearn.feature_extraction.text import TfidfTransformer
+from sklearn.feature_extraction.text import CountVectorizer
+import regex as re
+from collections import OrderedDict
+
 Doc.set_extension("textFrequency", default={})
 Doc.set_extension("tfidf", default={})
 Doc.set_extension("globalTfidf", default={})
@@ -55,3 +62,65 @@ def tfidf(corpus):
 
 def tfidfWithExternalData(corpus):
     return corpus
+
+
+# TODO: Clean
+stopwords = STOP_WORDS
+def pre_process(text):
+    """ Lower case all features and remove tags, numbers and full stops """
+    text = re.sub("&lt;/?.*?&gt;"," &lt;&gt; ", text.lower())
+    # TODO: missing check for special characters in OG codebase
+    return re.sub("(\\d|\\W)+"," ",text)
+
+def sort_matrix(matrix):
+    """ Sort a given matrix in descending order """
+    tuples = zip(matrix.col, matrix.data)
+    return sorted(tuples, key=lambda x: (x[1], x[0]), reverse=True)
+
+def top_keywords(feature_names, sorted_vectors):
+    """ Return the keywords with the highest score value and their score """
+    sorted_vectors = sorted_vectors[:5]
+    scores, features = [], []
+    
+    for idx, score in sorted_vectors:
+        scores.append(round(score, 3))
+        features.append(feature_names[idx])
+
+    results= {}
+    for idx in range(len(features)):
+        results[features[idx]]=scores[idx]
+    
+    return results
+
+def get_vocab(sentences):
+    """ Creates the vocabulary including the occurancens of the vocab """
+    vocab = OrderedDict()
+    i = 0
+    for sentence in sentences:
+        for word in sentence:
+            if word not in vocab:
+                vocab[word] = i
+                i += 1    
+    return vocab
+
+tfidf_transformer = TfidfTransformer(norm="l2", smooth_idf=True, use_idf=True, sublinear_tf=False)
+def calc_keywords(questions_list, corpus):
+    """ Prints out the keywords and their scores given a list of questions """
+    vectorizer = CountVectorizer(stop_words=stopwords)
+    # word_count_vector = vectorizer.fit_transform(questions_list)
+    word_count_vector = vectorizer.fit_transform(corpus)
+    
+    tfidf_transformer.fit(word_count_vector)
+    features = vectorizer.get_feature_names()
+    
+    doc = ", ".join(questions_list)
+    tfidf_vector = tfidf_transformer.transform(vectorizer.transform([doc]))
+    
+    sorted_vectors = sort_matrix(tfidf_vector.tocoo())
+    keywords = top_keywords(features, sorted_vectors)
+    
+    return max(keywords, key=keywords.get)
+    # print(doc)
+    # print("\nKeywords")
+    # for k in keywords:
+    #     print(k,keywords[k])
