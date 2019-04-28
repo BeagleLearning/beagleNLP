@@ -46,14 +46,15 @@ def clusterWords():
     if len(data["questions"]) < 2:
         raise BeagleError(errors.TOO_FEW_QUESTIONS)
 
+    question_list = [{"id": qn["id"], "question": qn["question"].lower()} for qn in data["questions"]]
     application.logger.info(f"Questions: {data['questions']}")
     if "keywords" in data and data['keywords'] is not None:
         application.logger.info(f"Keywords found! {data['keywords']}")
         corpus = analysis.clusterQuestionsOnKeywords(
-            data["questions"], data["keywords"])
+            question_list, data["keywords"])
     else:
         application.logger.info("No keywords found.")
-        corpus = analysis.clusterQuestions(data["questions"])
+        corpus = analysis.clusterQuestions(question_list)
     return jsonify(buildTagCluster(corpus))
 
 
