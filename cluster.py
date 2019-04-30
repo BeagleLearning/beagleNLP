@@ -97,7 +97,7 @@ def nameClusters(corpus):
             taggedClusters["uncategorized"] = cluster
             continue
         centroid = findClusterCentroid(cluster)
-        keywords = [t for doc in cluster for t in doc if not t.is_oov and not t.is_stop]
+        keywords = [t for doc in cluster for t in doc if not t.is_oov and not t.is_stop and not t.is_punct and len(t.text.strip()) > 1]
         keywordVecs = np.array([k.vector for k in keywords])
         vecToCentroid = keywordVecs - centroid
         dists = np.linalg.norm(vecToCentroid, axis=1)
