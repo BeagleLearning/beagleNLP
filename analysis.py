@@ -82,7 +82,9 @@ def textrank_keywords(questions_list, return_one=True):
     return textrank.get_keywords(corpus, return_one)
 
 def textrankIDF(questions_list, corpus):
-    ranked_keywords = textrank_keywords(questions_list, return_one=False)
+    
+    ranked_keywords = textrank_keywords([qn.text for qn in questions_list], return_one=False)
+    # ranked_keywords = textrank.get_keywords(corpus, False)
 
     highest_rank = None
     for i, (word, rank) in enumerate(ranked_keywords.items()):

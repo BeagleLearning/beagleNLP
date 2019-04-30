@@ -11,6 +11,8 @@ EPSILON = 0.25
 FRACTION_IN_CLUSTER = 0.05
 STD_FRACTION = 1.0
 
+import analysis
+
 
 def makeRepresentationMatrix(corpus):
     return np.array([doc._.vector for doc in corpus.documents])

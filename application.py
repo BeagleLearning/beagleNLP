@@ -65,6 +65,16 @@ def clusterWords():
     else:
         application.logger.info("No keywords found.")
         corpus = analysis.clusterQuestions(question_list)
+
+    # clusters = {}
+    # for key, questionsList in corpus.clusters.items():
+    #     keyword = analysis.textrankIDF([q.text for q in questionsList], corpus)
+    #     if (key == "uncategorized"):
+    #         clusters["uncategorized/"+keyword] = [doc._.tag for doc in questionsList]
+    #     else:
+    #         clusters[keyword] = [doc._.tag for doc in questionsList]
+
+    # return jsonify(clusters)
     return jsonify(buildTagCluster(corpus))
 
 
@@ -84,7 +94,7 @@ def playgroundClusterWords():
             "question": qn["question"].lower().strip()
         } for qn in data["questions"]]
     if "keywords" in data and data['keywords'] is not None:
-        # application.logger.info(f"Keywords found! {data['keywords']}")
+        application.logger.info(f"Keywords found! {data['keywords']}")
         corpus = analysis.clusterQuestionsOnKeywords(
             question_list, data["keywords"])
     else:
