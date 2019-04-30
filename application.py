@@ -4,8 +4,7 @@ import errors
 import analysis
 import logging
 from build_tag_cluster import buildTagCluster
-
-from tfidf import calc_keywords
+import textrank
 
 # logging.basicConfig(
 #     filename='/opt/python/log/application.log',
@@ -26,9 +25,11 @@ application.logger.info("Flask app created!")
 def indexRoute():
     return headerText + "Welcome to the Beagle NLP API" + endOfPage
 
+
 @application.route("/playground", methods=["GET"])
 def playground():
     return send_file("static/playground.html")
+
 
 @application.route("/robots.txt", methods=["GET"])
 def robots():
@@ -51,7 +52,11 @@ def clusterWords():
     if len(data["questions"]) < 2:
         raise BeagleError(errors.TOO_FEW_QUESTIONS)
 
-    question_list = [{"id": qn["id"], "question": qn["question"].lower()} for qn in data["questions"]]
+    question_list = [
+        {
+            "id": qn["id"],
+            "question": qn["question"].lower().strip()
+        } for qn in data["questions"]]
     application.logger.info(f"Questions: {data['questions']}")
     if "keywords" in data and data['keywords'] is not None:
         application.logger.info(f"Keywords found! {data['keywords']}")
@@ -60,14 +65,64 @@ def clusterWords():
     else:
         application.logger.info("No keywords found.")
         corpus = analysis.clusterQuestions(question_list)
-        print("corpus.clusters.item")
-        print(corpus.clusters)
-        allquestions = [q["question"] for q in question_list]
-        for key, questionsList in corpus.clusters.items():
-            print(calc_keywords([q.text for q in questionsList], allquestions))
-            # print()
+    return jsonify(buildTagCluster(corpus))
 
-        print("\n")
+
+@application.route("/play/cluster/", methods=["POST"])
+def playgroundClusterWords():
+    corpus = None
+    data = request.get_json()
+    if "questions" not in data:
+        raise BeagleError(errors.MISSING_PARAMETERS_FOR_ROUTE)
+
+    if len(data["questions"]) < 2:
+        raise BeagleError(errors.TOO_FEW_QUESTIONS)
+
+    question_list = [
+        {
+            "id": qn["id"],
+            "question": qn["question"].lower().strip()
+        } for qn in data["questions"]]
+    if "keywords" in data and data['keywords'] is not None:
+        # application.logger.info(f"Keywords found! {data['keywords']}")
+        corpus = analysis.clusterQuestionsOnKeywords(
+            question_list, data["keywords"])
+    else:
+        application.logger.info("No keywords found.")
+        corpus = analysis.clusterQuestions(question_list)
+        algorithm = data["algorithm"]
+        # print("\n")
+        # print(corpus.idf)
+        # allquestions = [q["question"] for q in question_list]
+        if (algorithm == "text-rank"):
+            clusters = {}
+            for key, questionsList in corpus.clusters.items():
+                # clusters[analysis.textrank_keywords([q.text for q in questionsList])] =
+                
+                if (key == "uncategorized"):
+                    keyword = analysis.textrank_keywords([q.text for q in questionsList])
+                    clusters["uncategorized/"+keyword] = [doc._.tag for doc in questionsList]
+                else:
+                    keyword = analysis.textrank_keywords([q.text for q in questionsList])
+                    clusters[keyword] = [doc._.tag for doc in questionsList]
+                # print("\n")
+                # print(clusters)
+                # print("\n")
+            return jsonify(clusters)
+        if (algorithm == "text-rank-idf"):
+            clusters = {}
+            for key, questionsList in corpus.clusters.items():
+                keyword = analysis.textrankIDF([q.text for q in questionsList], corpus)
+                if (key == "uncategorized"):
+                    clusters["uncategorized/"+keyword] = [doc._.tag for doc in questionsList]
+                else:
+                    clusters[keyword] = [doc._.tag for doc in questionsList]
+                # print("\n")
+                # print(clusters)
+                # print("\n")
+
+            return jsonify(clusters)
+        
     return jsonify(buildTagCluster(corpus))
 
 

@@ -20,10 +20,12 @@
 		<style>
 			body {
 				max-width: 100vw;
+				max-height: 100vh;
+				overflow: hidden;
 			}
 			.container.fluid {
 				max-width: 100%;
-				padding-top: 5vh;
+				padding-top: 2vh;
 			}
 			.cluster-container {
 				margin-bottom: 25px;
@@ -34,8 +36,17 @@
 				border-radius: 8px;
 			}
 			.scrollable {
-				max-height: 100vh;
+				max-height: 87vh;
 				overflow: scroll;
+			}
+			.mb-0 {
+				margin-bottom: 0px;
+			}
+			.mt-1 {
+				margin-top: 1em;
+			}
+			.pt-1 {
+				padding-top: 1em;
 			}
 		</style>
 
@@ -44,9 +55,21 @@
 				<div class="row">
 					<div class="column">
 						<div class="container">
-							<h1>Questions</h1>
+							<h2 class="mb-0">Questions</h2>
 
-							<div>
+							<h4>Choose Dataset:</h4>
+							<div class="row mb-0">
+								<div v-for="(dataset, key) in datasets" class="column">
+									<input
+										v-on:change="chooseDataSet"
+										name="datasetPicker"
+										type="radio"
+										:id="key"
+									/>
+									<label class="label-inline" :for="key">{{ key }}</label>
+								</div>
+							</div>
+							<div style="height: 50vh; overflow: scroll;">
 								<ol>
 									<li v-for="qn in questions">
 										{{ qn.question }}
@@ -68,20 +91,55 @@
 						</div>
 					</div>
 					<div class="column">
-						<div id="v-for-object" class="container scrollable">
-							<h1>Clusters</h1>
-
-							<div v-for="(cluster, key) in clusters" class="cluster-container">
-								<div class="tag">
-									<h5>
-										<span>{{ key }}</span>
-									</h5>
+						<div id="v-for-object" class="container">
+							<h2 class="mb-0">Clusters & Keywords</h2>
+							<div class="row mb-0">
+								<div class="column">
+									<input
+										v-on:change="toggleAlgorithm"
+										id="tf-idf"
+										name="algorithmPicker"
+										type="radio"
+										:checked="algorithm === 'tf-idf'"
+									/>
+									<label class="label-inline" for="tf-idf">TF-IDF(current)</label>
 								</div>
-								<ul>
-									<li v-for="questionId in cluster">
-										{{ questions.find(qn => qn.id === questionId).question }}
-									</li>
-								</ul>
+								<div class="column">
+									<input
+										v-on:change="toggleAlgorithm"
+										id="text-rank"
+										name="algorithmPicker"
+										type="radio"
+										:checked="algorithm === 'text-rank'"
+									/>
+									<label class="label-inline" for="text-rank">Text Rank</label>
+								</div>
+								<div class="column">
+									<input
+										v-on:change="toggleAlgorithm"
+										id="text-rank-idf"
+										name="algorithmPicker"
+										type="radio"
+										:checked="algorithm === 'text-rank-idf'"
+									/>
+									<label class="label-inline" for="text-rank-idf">TextRank-IDF</label>
+								</div>
+							</div>
+							<div class="scrollable pt-1">
+								<div v-for="(cluster, key) in clusters" class="cluster-container">
+									<div class="tag">
+										<h5>
+											<span>{{ key }}</span>
+										</h5>
+									</div>
+									<ul>
+										<li v-for="questionId in cluster">
+											{{ 
+												questions.find(qn => qn.id === questionId) ? questions.find(qn => qn.id === questionId).question : ""
+											}}
+										</li>
+									</ul>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -90,21 +148,148 @@
 		</div>
 
 		<script>
+			const datasets = {
+				"Global-Inequalities": [
+					`Here's a question?`,
+					`In terms of the strength and reliability of a specific country’s legal system, or lack thereof, how does this generally impact the willingness for investors to invest in an underdeveloped country? Especially because the intentions and chances that foreign investors take and have vary greatly.`,
+					`When the article says, "Environmental economists are concerned that the long-term neglect of the,environmental assets is likely to jeopardize the durability of economic growth" does it imply that the more sustainable capital a country has, the more economically stable it is? If so, how does the United States fit into that model?`,
+					`Who is the “invisible hand” and why did it become the foundation for the of capitalism and market economy?`,
+					`Are there examples of developing countries where the coordination theory endorsed by the text has been translated into successful policy? `,
+					`Regarding the authors statement that "historical experience of socialist economies showed little or no improvement in the living conditions of the poor" I would entirely dismiss this statement as a falsehood.  Developments in places such as Cuba from the time of the Cuban Revolution that have raised the literacy rate above all first world countries, life expectancy above the US, and high participation in local municipal elections among other advancements.  Of course western chauvinists will only look to the downsides of the Cuban model, downsides almost entirely caused by a death sentence embargo placed on the island in 1958 after they nationalized US oil refineries.  We could also look to African nations such as Burkina Faso, which prospered under leader Thomas Sankara before he was overthrown in a coup for harming the country's relationship with its previous colonial ruler, France.  I suppose my question is why does the author propose this idea of no improvement in these countries despite the constant imperialistic threat of western countries putting them at an inherent disadvantage whenever their policies do not align?`,
+					`In dependency theory, the primary role of elites is to generate profit through exploitation. However, why is it likely for them to handle globalization to continue their enhancing quality of life at the expense of persistent low wages and inadequate living circumstances for those who are in need?`,
+					`.`,
+					`For the International Dependence Model, wouldn't dependency be more linked to the disparities of power and war than through capitalism?`,
+					`Considering the many factors that are included in the analysis of countries and determining whether or not they are developing, is anyone able to say whether one factor is more important than another? (ex. material well-being vs. environment)`,
+					`What brought about the changes in the way that economists viewed under developed countries? How do policy makers and economists pick and choose which theories to apply to fit what would work best for their country?`,
+					`Based on the reading, specifically the claims made on page 9 of the document, about the effect of cultural and historical contexts of developing countries, is it fair to say that the cultures and histories of a country plays as big a role in economic development as does privatization and foreign investment?`,
+					`"...the indicator is a measure of well-being and development exclusively based on material wealth."  pg. 2. The reading highlights the importance for a developed country to be an economic powerhouse. Yet, with the neglect of health care, education and improving quality of life, can a country become "developed" by capitalizing on its citizens' happiness at the forefront instead of economic growth? `,
+					`Considering that all these problems have arisen out of attempting to bring growth to developing countries, doesnt it seem as though a strong government with little market intervention other than protecting strong property rights be necessary in order to first generate a working economy, before moving to a market economy that can provide for development of education and improve standards of living for the poor? And if so, how could sustainability be achieved and coordination failure avoided? `,
+					`How come invest in China has decreased poverty, but in India it has grown? `,
+					`In the section " 2.2.2 Quality of life" they stated how even though the income is rising, living conditions are not. With this is mind, do you think people need to stop protesting for higher incomes but instead protest to make necessities like, housing, food, and higher education cheaper?`,
+					` What are some ways businesses that are already successful can begin to work on incorporating MDGs into their mission? How can businesses be regulated to ensure these MDGs are being thought about?`,
+					`Is it possible for developing nations to obtain the capital necessary to enter the take-off phase of development without allowing for the traditional environmental degradation that accompanies such excesses in production?`,
+					`With an increased focus on sustainable development, is it worthwhile for national and international development agencies to aid in constructing natural energy resources (i.e. solar, wind, and water energy)?`,
+					`The article talks about the differences between Karl Marx and Adam Smith on what is the best economic model for development. Adam Smith argues that capitalism (free trade, private property, and competition) is the best model. However, it is often criticized for making the rich richer while the poor get poorer. I wonder how valid this criticism is and if socialism is really a better solution? `,
+					`Within the Theory of Coordination Failure, it is stated that basic investments between 2005-2015 in public administration, human capital and key infrastructure would be able to break developing countries out of the poverty trap. If the theory has been applied to developing countries, which countries has it been implemented in and have there been significant statistical evidence of improvement? Also, if there has been, what type of strategies did the policy-makers of these developing countries apply to reach a developed nation? `,
+					`Can areas of developing countries who consider themselves living a high quality of life, although have a low per-capita income, still be considered to be highly developed? If their quality of life is high, then who is to say that those people are not developed in a way that fits their culture/lives best? Does monetary value always have to be a factor in an area's said "development"? `,
+					`I'm a little confused about how investments in knowledge work, and how they can be attracted to developing nations, with the product going to benefit those nations - and not just the investors? It seems like with intellectual property rights in the current global system, there is little answer byway of policy that could incentivize foreign investment in \"knowledge-intensive\" industries. `,
+					`Out of all the theories, which one has produced the most successful economies in practice? The theory of coordination failure seeks to explain developmental failures as a result of the failure of various actors within an economic system to coordinate their actions for mutual benefit. This theory “highlights the problems of market failure that require selective government intervention to ensure that several things work well together at the same time,” implying that good development is dependent on the enactment of fiscal policy by the government to prevent/ mitigate the effects of coordination failure. Is the emphasis that this theory places on government coordination to encourage development dangerous? `,
+					`What approach would a smaller, more underdeveloped take to pursue economic development compared to a more advanced larger country who is already somewhat developed?`,
+					`After realizing throughout this reading how important the quality of life actually is, I ask myself: In which case do individuals in society tend to live a better life (meaning perhaps more freedom), in a developed nation, where the main focus is the promotion of growth? or in a developing nation, where the main focus is the promotion of well-being? `,
+					`This chapter introduces a number of theories and explanations that seek to solve economic problems. The issue with this, though, is that these problems are very deep and complex. My question then, in its simplest form, is which theory is best? Which theory can we use to explain the most issues? And which theory can be used to learn from, in order to prevent economic problems and create wealth, which is the ultimate goal of any economic development? There is no simple answer, I know this. But how can we combine the best aspects of all of these ideas to create a guide for the future, based off a combination of these strong theories already? `,
+					`When is the difference between GNI and GNP so large that it causes a negative inequality? Specifically if GNP is larger since it is not going back the citizens of that country.`,
+					`It has been found that past economic development efforts have resulted in great income inequality across the countries in which they are implemented. Furthermore, the goal of economic development is ultimately to improve the lives of those living in developing countries, yet development efforts have repeatedly fallen short on this goal. Given that the vehicles for a country’s development (e.g. education, employment, access to technology, a robust healthcare system) all require investments which must be allocated specifically to each sector, a process which must be spearheaded, organized, and regulated by a central government, is political stability a prerequisite for economic development?`,
+					`Which theory of economic development is the most successful, and has shown the best results.`,
+					`If there is \"virtually no gain in human development and well-being from income per capita over $75,000,\" why do many developed nations choose to focus heavily in corporate and industrial growth rather than improvements of infrastructure and the redistribution of wealth?`,
+					`With the Multidimensional Poverty Index differing from the Inequality adjusted Human Development Index by using one survey to construct a measure, would the measure for the MPI reflect accurately if a missing indicator was estimated as seen in the IHDI? `,
+					`Would it not be more accurate and effective to use each country's own currency instead of the current PPP method, then compare these results?`,
+					`Considering all of these different economic measures for a nation, and the relation of these measures to development, does the labor done that doesn't contribute to GDP, GNP, or GNI (household work, raising children, etc) promote development? if so, how does this affect these measurements as indicators of development`,
+					`In regard to the HDI, who has determined that the three measurements (life expectancy, education, and income) are the best indicators of human development? This seems a bit arbitrary to me. In class we listed maybe 10 different ways to measure development. Why not create an index that takes into account the most factors? Child mortality rate, infrastructure projects, outside investments, technological availability, number of people in poverty, unemployment rate, etc... I feel like the more measurements on the same scale of measuring would create the most accurate index and give the most information about the true status of development in each country. `,
+					`Our perception of a country’s development seems to be rooted in quantitative economic measures such as GDP, GNI, and GNP. Yet because these measures fail to account for wealth distribution in countries, they tend to shift global attention toward countries with the lowest-ranking HDI dimensions for life expectancy, education, and wealth. As such, global governance often neglects large communities within developed countries (with higher overall HDI dimensions) where people suffer from poverty, poor access to healthcare, educational barriers, and low life expectancy across racial, religious, and geopolitical divides. Although IHDI attempts to account for inequality in the distribution of each HDI dimension across a country’s population, it does not represent the damages of wealth inequality within specific countries. By what means can we draw global attention to the adversity that low-income individuals face in developed countries? Could foreign pressure on such countries encourage them to address domestic wealth inequality? If so, how?`,
+					`How does the PPP method (or consequences of PPP exchange rates) contribute to establishing a solid foundation for all considerations of international inequalities when the method itself could possibly be seen as deceptive in a way that it doesn’t necessarily or accurately represent the actual conditions of material, which means that it could also have a tremendous impact on the adjustments in actual income as time progresses?`,
+					`Why would the money that is sent back to emerging market countries not be included in GDP measurements? It seems that it could make GDP measurements unreliable if remittance is not included while contributing to economic growth.   `,
+					`Was the human development index made to make western nations look better?`,
+					`When choosing what developmental goals to go after, which ones should take most prominence?`,
+					`Do higher GNI countries fair better in development than other countries?`,
+					`Earlier in class we stated that GDP is generally a very good indicator of the development of a country, but should we instead be looking at more specific calculations like the ones mentioned in the readings? Is GDP best, or is GNP better since it more easily measures the income and monetary levels of a nation's citizens and businesses?`,
+					`Why is GDP the most commonly used of it, GNP, and GNI? At least, why is GDP taught in simple high school economics where GNP and GNI is not? Is one a better indicator, or should they all be taken together?`,
+					`What solidified relationships exist between the HDI and the GDP, and how are qualifiers such as access to knowledge quantified when taking into account cultural knowledge passed down in different communities?`,
+					`As the HDI Technical Note lists in its data sources, their \"access to knowledge\" measurement is weighed only on the time children spend in school (e.g. \"Mean years of schooling: Barro and Lee (2016)\" & \"Expected years of schooling: UNESCO Institute for Statistics (2016)\"). Is there a way to quantify not the amount of education but instead the quality of education that children in developing countries receive? That seems like a more adequate measure of education than purely time.`,
+					`Like Mexico, what other countries will have a lower GDP compared to the GNI and GNP?`,
+					`When using GDP and GNI to compare the growth and development of nations against static standards and other nations, what implications arise from using one metric over another? How does the labeled perception of a successful or unsuccessful economy from these indicators effect a countries ability to further develop its economy in terms of its international relations? `,
+					`"The low minimum value for ... GNI per capita, $100, is justified by the considerable amount of unmeasured subsistence ...in economies close to the minimum, which is not captured in the official data." It seems to me, like this is explaining an oversight to some extent. If it is explaining it, but there still remains a considerable amount of uncaptured data, it seems like the set would be skewed as a result. So does this, and other "minimums" on the scale distort the data set, and thus our analysis of it? `,
+					`Are there other measures, along with HDI, that help in accounting for a country's development?`,
+					`Both GNI and GDP struggle to account for informal economic activities. For example, there are markets in India with massive economic activity that is never formally reported for these statistics. How can a developing country benefit from including those as well?`,
+					`So if GNI measures "all income of a country's residents and businesses regardless of where its produced", how do out of country banking practices change these numbers? Does that count as foreign investment? Does GNI only include what is spent (consumed) from those accounts within the country? What are the measurements of inequality that IHDI uses? Is this the best index we have to measure development?`,
+					`GDP is a measure of product of a country  (based on location), while GNI measures the country's income by citizens (based on people). When looking at these two forms of measurement for economies, which is more effective? Does the answer change depending on whether we're evaluating developed or underdeveloped countries?`,
+					`What determines the value of goods and services in the market since something can be valuable in one country but rarely used in another? Is it based on the size of the country, their GNI, or solely if they are developed or not?`,
+					`What if a country is considered underdeveloped by the HDI factors and calculations because of their specific culture? For example, a culture that may not value education, or does not bother with monetary needs. Although through their culture, they could have generated other non-conventional/non-western ways of development. Who is to say what the true definition of a "developed country" is? And doesnt the HDI seem to be cheating itself out of an accurate measurment by not including cultural factors? Being focused more on westernized worlds?`,
+					`Is gross national income a better determinant of a country's development? Given that the gross national product includes all assets and earnings owned by residents; therefore, it is to general in order to decide a country's level of development. `,
+					`As developing countries continue to grow will it be difficult to adjust the projected real growth rates of GDP?`,
+					`Does GNI disproportionately value countries with a high population?`,
+					`.`,
+					`With the various ways of measuring a country's economical growth, I believe that there are many ways in which a country's development can be questioned or contradicted. What types of measurements could be more efficient to compare a country's development to another's besides GDP per capita? Would we include something other than materialistic components such as consumption, investments, etc. to something more applicable that deals with the general welfare of a nation?`,
+					`HDI in relation to GDP is not the best evaluation of  a countries development since several factors are not taken in to consideration. Education, life expectancy, child mortality, and income can not solely determine wether a country is developed. However it does help, but still we also have to take into consideration wether a country has a corrupt government, is at war and if resources and wealth are being accounted for accurately. GNI paired with HDI and GDP stats can help us see how fair a regime is but to determine terms development based on a western society remains obsolete in certain places that have a different value system.  `,
+					`.`,
+					`Does anybody think there will ever be a point in time many fortunate and developed countries will be able to set aside higher funds and productions for developing countries in order to better their economy and raise profits? If so, what would the societal implications be and how would the citizens within this society react to such a move? `,
+					`I think it's very interesting to consider the main criteria for these undeveloped countries is based entirely on western thought and influence. This leads to my question being that should there be any surveys or interviews with citizens in these countries to get their personal views on their standard and way of living? It would obviously be virtually impossible to do so but I think data like this would help us gauge what they might consider developed.  `,
+					`Are theories of economic developing utilizing characteristics like poverty and inequality still the most appropriate for the modern world? Is it even possible for consistent economic development in the developing world when wealthy countries like the U.S. continue to exploit natural resources?`,
+					`Capitalism admits it is based on the assumption of profit being reinvested. What doesn't seem to be addressed is whether all profit is good. Yes, businesses must make a profit to cover expenses and growth. However, expansionary economic policy has produced economic gains historically. In order to implement an expansionary policy we must build and buy at EVERY level. Meaning the employees and all the workers necessary to get those employees to work must build & buy as well. Meaning higher wages and less profit. How does this fit in using a capitalistic form of economic measurement when assessing developing nations?`,
+					`If this article is talking about ways a country could develop their economy and saying it would have been altered by one or two observable features, wouldn't that be all speculation?`,
+					`On page 2 the author mentions that \"the rate of growth in these sectors will vary greatly; and it is possible to isolate empirically certain leading sectors...who play an essential director and indirect role in maintaining the overall momentum of the economy.\" The world has been global for a while, even when this was written in 1959, but I wonder if this statement is still true because production has become so rapid? I feel that is not entirely possible to isolate or measure the effects of this momentum. `,
+					`What ties the economic and non-economic take-off qualifier/ quantifiers together and how does this combined threshold change the interpretation of their individual definitions? `,
+					` In the fourth page the article asks \" should the traditional society react to the intrusion of a more advanced power.\" On  a moral scale no, they shouldn't have to. Traditions, culture shouldn't have to shift or adjust to someone of greater power. But those nations that are on a traditional scale must be rational and understand, if they do not adjust they while become absolute. A traditional society must realize for the greater good they have to react and adapt. `,
+					`Some nation states highly value free competitive markets and communism. While others identify more with privately own production and the exclusivity of goods. What causes some much variance in the development of economic growth in the differentiation of East and West credos? How do we accurately assess what is the most progressive trajectory for Western society in comparison to Eastern society when the two have drastically different political ideologies and value systems in terms of technology, consumption, and production based on the divergent traditions? `,
+					`Towards the beginning of the reading Rostow argues that we are not able to optimize the patterns of development due to lack of deceleration created by wars, government policies, and private investments. Wars especially create an issue for optimal economic growth and equilibrium by disrupting the economic system in creating arbitrary demands, shifting the supply conditions, destroying capital, accelerating the development of new technologies, and shifting the political and social framework in that area. These effects are negative, but some countries (such as Britain) have developed positively to those circumstances. How do modern developing countries differ when looking into the same dynamic theory of production?`,
+					`Does the author believe that these economic principles will continue to have the same effect, or will a change be in order once the time comes, as economic system of the past have been overhauled for their more contemporary counterparts?`
+				],
+				"Parks-And-Rec": [
+					`Is the show appropriate for children to watch?`,
+					`Who are the characters in the show Parks and Rec?`,
+					`What is the main character's name?`,
+					`What character does Amy Pohler play in this show?`,
+					`What is one character's job in Parks and Rec?`,
+					`Does Leslie ever get to become the city council woman in this show? `,
+					`Who is the city council member that is elected during this show?`,
+					`Why does Tom always fail as an entrepreneur? `,
+					`Is Ron an entrepreneur?`,
+					`Who is married to Andy in the show?`,
+					`Why does this show take place in Indiana?`,
+					`What is the city in Indiana where this show takes place?`,
+					`Why does Leslie love Pawnee so much?`,
+					`Is Ben an accountant in real life?`,
+					`Who does Ben marry?`,
+					`What is the candy company that is featured in the show? `,
+					`What kind of candy does Sweetums sell?`,
+					`What is the one thing that Leslie likes the most?`,
+					`Who is Leslie's best friend?`,
+					`Does Leslie's book make it into the book club?`,
+					`What kind of book does Leslie write?`,
+					`Who is the director of Parks and Rec?`,
+					`How many women are there in this show?`,
+					`Does Leslie ever get to meet the president of the united states?`,
+					`Who is the best character in the show?`,
+					`What happens to Tom when he isn't allowed to use his phone for one whole week?`,
+					`What is the main story?`,
+					`Sometimes, why is it that Tom goes all crazy when he is trying to date?`,
+					`Do you think that the best episode is the one where Ben proposes to Leslie?`
+				],
+				Custom: []
+			};
 			const loc = window.location;
 			const qnObj = { id: 0, question: "" };
-			const url = loc.protocol + "//" + loc.host + "/cluster/";
+			const url = loc.protocol + "//" + loc.host + "/play/cluster/";
 			var app = new Vue({
 				el: "#app",
 				data: {
-					questions: [
-						{ id: 0, question: "first question here" },
-						{ id: 1, question: "second question here" },
-						{ id: 2, question: "and another one here" },
-						{ id: 3, question: "randomized testing happened here" }
-					],
-					clusters: {}
+					algorithm: "tf-idf", // tf-idf or text-rank or text-rank-idf
+					questions: [],
+					clusters: {},
+					datasets: datasets
+				},
+				watch: {
+					algorithm: {
+						handler: "clusterQuestions"
+					}
 				},
 				methods: {
+					toggleAlgorithm: function(event) {
+						console.log(event.target.id)
+						this.algorithm = event.target.id;
+					},
+					chooseDataSet: function(event) {
+						let dataset = this.datasets[event.target.id];
+						if (event.target.id === "Custom") {
+							this.questions = [];
+							this.clusters = {};
+						} else {
+							const list = dataset.map((question, index) =>
+								Object.assign({}, { id: index, question: question })
+							);
+							this.questions = list;
+							this.clusterQuestions();
+						}
+					},
 					clusterQuestions: function() {
 						const _this = this;
 						const qnVal = document.getElementById("questionField").value;
@@ -115,18 +300,24 @@
 							this.questions.push(qn);
 							document.getElementById("questionField").value = "";
 						}
-						
+						if (this.questions.length < 2) return;
+
 						var xhr = new XMLHttpRequest();
 						xhr.withCredentials = true;
 						xhr.addEventListener("readystatechange", function() {
 							if (this.readyState === 4) {
 								_this.clusters = Object.assign({}, JSON.parse(this.responseText));
-								// console.log(this.responseText);
+
+								console.log(
+									Object.values(JSON.parse(this.responseText)).flat().length
+								);
 							}
 						});
 						xhr.open("POST", url);
 						xhr.setRequestHeader("Content-Type", "application/json");
-						xhr.send(JSON.stringify({ questions: this.questions }));
+						xhr.send(
+							JSON.stringify({ questions: this.questions, algorithm: this.algorithm })
+						);
 					}
 				}
 			});
