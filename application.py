@@ -5,6 +5,7 @@ import analysis
 import logging
 from build_tag_cluster import buildTagCluster
 import textrank
+import time
 
 # logging.basicConfig(
 #     filename='/opt/python/log/application.log',
@@ -99,16 +100,14 @@ def playgroundClusterWords():
             question_list, data["keywords"])
     else:
         application.logger.info("No keywords found.")
+        start = time.time()
         corpus = analysis.clusterQuestions(question_list)
+        print("\n", "analysis.clusterQuestions took: ", time.time() - start, "\n")
         algorithm = data["algorithm"]
-        # print("\n")
         # print(corpus.idf)
-        # allquestions = [q["question"] for q in question_list]
         if (algorithm == "text-rank"):
             clusters = {}
             for key, questionsList in corpus.clusters.items():
-                # clusters[analysis.textrank_keywords([q.text for q in questionsList])] =
-                
                 if (key == "uncategorized"):
                     keyword = analysis.textrank_keywords([q.text for q in questionsList])
                     clusters["uncategorized/"+keyword] = [doc._.tag for doc in questionsList]
@@ -117,7 +116,6 @@ def playgroundClusterWords():
                     clusters[keyword] = [doc._.tag for doc in questionsList]
                 # print("\n")
                 # print(clusters)
-                # print("\n")
             return jsonify(clusters)
         if (algorithm == "text-rank-idf"):
             clusters = {}
@@ -129,7 +127,6 @@ def playgroundClusterWords():
                     clusters[keyword] = [doc._.tag for doc in questionsList]
                 # print("\n")
                 # print(clusters)
-                # print("\n")
 
             return jsonify(clusters)
         
