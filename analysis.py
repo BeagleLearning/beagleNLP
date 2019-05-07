@@ -15,6 +15,7 @@
 
 import numpy as np
 import spacy
+from collections import OrderedDict
 from errors import UNKNOWN_KEYWORDS
 from beagleError import BeagleError
 from corpus import Corpus
@@ -22,6 +23,7 @@ from tagged_question_corpus import TaggedQuestionCorpus
 import tfidf as tfidf
 import document_vector as docVec
 import cluster
+import textrank
 from cluster_on_keywords import clusterOnKeywords
 
 
@@ -73,3 +75,31 @@ def dist(wordOne, wordTwo):
 
 def getVector(word):
     return nlp(word).vector
+
+
+def textrank_keywords(questions_list, return_one=True):
+    corpus = nlp(" ".join(questions_list))
+    return textrank.get_keywords(corpus, return_one)
+
+def textrankIDF(questions_list, corpus):
+    ranked_keywords = textrank_keywords(questions_list, return_one=False)
+
+    highest_rank = None
+    for i, (word, rank) in enumerate(ranked_keywords.items()):
+        lemma = lemmatize_word(word)
+        # FIXME: This smells hack-y
+        if lemma in corpus.idf:
+            current_rank = rank*corpus.idf[lemma]
+        else:
+            current_rank = rank
+        if highest_rank == None or highest_rank[1] < current_rank:
+            highest_rank = (word, current_rank)
+
+    if highest_rank:
+        return highest_rank[0]
+    
+    return "uncategorized"
+
+
+def lemmatize_word(word):
+    return [w.lemma_ for w in nlp(word)][0]

@@ -5,6 +5,7 @@ import numpy as np
 from sklearn.cluster import DBSCAN
 from spacy.tokens import Doc
 import document_distance as dd
+import analysis
 Doc.set_extension("clusterLabel", default=-1, force=True)
 EPSILON = 0.25
 FRACTION_IN_CLUSTER = 0.05
@@ -85,7 +86,7 @@ def findClusterCentroid(cluster):
         return np.sum([doc._.vector for doc in cluster], axis=0) / numDocs
 
 
-def nameClusters(corpus):
+def nameClusters(corpus, algorithm="textrank"):
     # each cluster needs to get some sort of title.
     # so I think we should extract all keywords
     # then for each keyword, we look at which single one is closest to the
@@ -93,17 +94,23 @@ def nameClusters(corpus):
     # smallest average distance
     taggedClusters = {}
     for (tag, cluster) in corpus.clusters.items():
+        keyword = ""
         if tag == "uncategorized":
             taggedClusters["uncategorized"] = cluster
             continue
-        centroid = findClusterCentroid(cluster)
-        keywords = [t for doc in cluster for t in doc if not t.is_oov and not t.is_stop and not t.is_punct and len(t.text.strip()) > 1]
-        keywordVecs = np.array([k.vector for k in keywords])
-        vecToCentroid = keywordVecs - centroid
-        dists = np.linalg.norm(vecToCentroid, axis=1)
-        print(f"dists {[[dists[i], keywords[i].text] for i in range(len(dists))]}")
-        minIndex = np.argmin(dists)
-        print(f"New keyword text {keywords[minIndex].text}")
-        taggedClusters[keywords[minIndex].text] = cluster
+        if algorithm == "textrank":
+            keyword = analysis.textrank_keywords([q.text for q in cluster], corpus)
+            print(f"\n New keyword text {keyword} \n")
+        else:
+            centroid = findClusterCentroid(cluster)
+            keywords = [t for doc in cluster for t in doc if not t.is_oov and not t.is_stop and not t.is_punct and len(t.text.strip()) > 1]
+            keywordVecs = np.array([k.vector for k in keywords])
+            vecToCentroid = keywordVecs - centroid
+            dists = np.linalg.norm(vecToCentroid, axis=1)
+            print(f"dists {[[dists[i], keywords[i].text] for i in range(len(dists))]}")
+            minIndex = np.argmin(dists)
+            print(f"New keyword text {keywords[minIndex].text}")
+            keyword = keywords[minIndex].text
+        taggedClusters[keyword] = cluster
     corpus.clusters = taggedClusters
     return corpus
