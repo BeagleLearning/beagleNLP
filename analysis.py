@@ -78,7 +78,7 @@ def getVector(word):
 
 
 def textrank_keywords(questions_list, return_one=True):
-    corpus = nlp(" ".join(questions_list))
+    corpus = nlp(textrank.clean_text(" ".join(questions_list)))
     return textrank.get_keywords(corpus, return_one)
 
 def textrankIDF(questions_list, corpus):
