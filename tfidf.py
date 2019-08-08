@@ -5,6 +5,7 @@ from wordfreq import word_frequency
 from spacy.lang.en import STOP_WORDS
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 import regex as re
 from collections import OrderedDict
 
@@ -62,6 +63,13 @@ def tfidf(corpus):
 
 def tfidfWithExternalData(corpus):
     return corpus
+
+
+# def sk_tfidf(corpus):
+#     totalDocCount = len(corpus.documents)
+#     corpus.idf = {}
+#     for doc in corpus.documents:
+        
 
 
 # TODO: Clean
