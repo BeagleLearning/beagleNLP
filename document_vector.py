@@ -2,7 +2,7 @@ import errors
 from beagleError import BeagleError
 import numpy as np
 from spacy.tokens import Doc
-Doc.set_extension("vector", default={})
+# Doc.set_extension("vector", default={})
 # create document vectors
 
 

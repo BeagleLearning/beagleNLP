@@ -17,7 +17,7 @@ headerText = '''
 endOfPage = '</body>\n</html>'
 
 # EB looks for an 'application' callable by default.
-application = Flask(__name__)
+application = Flask(__name__, static_url_path='/static/')
 
 application.logger.info("Flask app created!")
 
@@ -29,7 +29,8 @@ def indexRoute():
 
 @application.route("/playground", methods=["GET"])
 def playground():
-    return send_file("static/playground.html")
+    # return render_template('playground.html')
+    return application.send_static_file("playground.html")
 
 
 @application.route("/robots.txt", methods=["GET"])
@@ -53,31 +54,35 @@ def clusterWords():
     if len(data["questions"]) < 2:
         raise BeagleError(errors.TOO_FEW_QUESTIONS)
 
-    question_list = [
-        {
-            "id": qn["id"],
-            "question": qn["question"].lower().strip()
-        } for qn in data["questions"]]
     application.logger.info(f"Questions: {data['questions']}")
-    if "keywords" in data and data['keywords'] is not None:
+    if "keywords" in data and data['keywords'] is not None and len(data['keywords']) > 0:
         application.logger.info(f"Keywords found! {data['keywords']}")
         corpus = analysis.clusterQuestionsOnKeywords(
-            question_list, data["keywords"])
+            data["questions"], data["keywords"])
+        corpus = jsonify(corpus)
     else:
         application.logger.info("No keywords found.")
-        corpus = analysis.clusterQuestions(question_list)
+        corpus = analysis.clusterQuestions(data["questions"])
+        corpus = jsonify(buildTagCluster(corpus))
 
-    # clusters = {}
-    # for key, questionsList in corpus.clusters.items():
-    #     keyword = analysis.textrankIDF([q.text for q in questionsList], corpus)
-    #     if (key == "uncategorized"):
-    #         clusters["uncategorized/"+keyword] = [doc._.tag for doc in questionsList]
-    #     else:
-    #         clusters[keyword] = [doc._.tag for doc in questionsList]
+    return corpus
 
-    # return jsonify(clusters)
-    return jsonify(buildTagCluster(corpus))
 
+@application.route("/cluster/categorize-new-questions", methods=["POST"])
+def categorizeOrphanQuestions():
+    corpus = None
+    data = request.get_json()
+    if "clusters" not in data or len(data["clusters"]) == 0:
+        raise BeagleError(errors.MISSING_PARAMETERS_FOR_ROUTE)
+
+    if data["questions"] is None or len(data["questions"]) == 0:
+        raise BeagleError(errors.MISSING_PARAMETERS_FOR_ROUTE)
+
+    application.logger.info(f"Questions: {data['questions']}")
+    corpus = analysis.matchQuestionsWithCategories(data["questions"], data["clusters"])
+
+    return jsonify({})
+    
 
 @application.route("/play/cluster/", methods=["POST"])
 def playgroundClusterWords():
@@ -89,6 +94,9 @@ def playgroundClusterWords():
     if len(data["questions"]) < 2:
         raise BeagleError(errors.TOO_FEW_QUESTIONS)
 
+    algorithm = data["algorithm"]
+    algorithmParams = data["algorithmParams"]
+    removeOutliers = data["removeOutliers"]
     question_list = [
         {
             "id": qn["id"],
@@ -100,35 +108,7 @@ def playgroundClusterWords():
             question_list, data["keywords"])
     else:
         application.logger.info("No keywords found.")
-        start = time.time()
-        corpus = analysis.clusterQuestions(question_list)
-        print("\n", "analysis.clusterQuestions took: ", time.time() - start, "\n")
-        algorithm = data["algorithm"]
-        # print(corpus.idf)
-        if (algorithm == "text-rank"):
-            clusters = {}
-            for key, questionsList in corpus.clusters.items():
-                if (key == "uncategorized"):
-                    keyword = analysis.textrank_keywords([q.text for q in questionsList])
-                    clusters["uncategorized/"+keyword] = [doc._.tag for doc in questionsList]
-                else:
-                    keyword = analysis.textrank_keywords([q.text for q in questionsList])
-                    clusters[keyword] = [doc._.tag for doc in questionsList]
-                # print("\n")
-                # print(clusters)
-            return jsonify(clusters)
-        if (algorithm == "text-rank-idf"):
-            clusters = {}
-            for key, questionsList in corpus.clusters.items():
-                keyword = analysis.textrankIDF([q.text for q in questionsList], corpus)
-                if (key == "uncategorized"):
-                    clusters["uncategorized/"+keyword] = [doc._.tag for doc in questionsList]
-                else:
-                    clusters[keyword] = [doc._.tag for doc in questionsList]
-                # print("\n")
-                # print(clusters)
-
-            return jsonify(clusters)
+        corpus = analysis.customClusterQuestions(question_list, algorithm, algorithmParams, removeOutliers)
         
     return jsonify(buildTagCluster(corpus))
 

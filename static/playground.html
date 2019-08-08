@@ -21,6 +21,7 @@
 			body {
 				max-width: 100vw;
 				max-height: 100vh;
+				padding-top: 1em;
 				overflow: hidden;
 			}
 			.container.fluid {
@@ -28,7 +29,15 @@
 				padding-top: 2vh;
 			}
 			.cluster-container {
-				margin-bottom: 25px;
+				margin-bottom: 20px;
+				height: 100%;
+			}
+			.cluster-container-loading {
+				margin-bottom: 20px;
+				height: 50vh;
+				display: flex;
+				justify-content: center;
+				align-items: center;
 			}
 			.tag > h5 > span {
 				background-color: #ccc;
@@ -36,7 +45,7 @@
 				border-radius: 8px;
 			}
 			.scrollable {
-				max-height: 87vh;
+				max-height: 80vh;
 				overflow: scroll;
 			}
 			.mb-0 {
@@ -45,21 +54,34 @@
 			.mt-1 {
 				margin-top: 1em;
 			}
+			.mt-0 {
+				margin-top: 0px;
+			}
 			.pt-1 {
 				padding-top: 1em;
 			}
+			.pb-1 {
+				padding-bottom: 1em;
+			}
 		</style>
-
 		<div id="app">
 			<div class="container fluid">
 				<div class="row">
 					<div class="column">
 						<div class="container">
-							<h2 class="mb-0">Questions</h2>
-
-							<h4>Choose Dataset:</h4>
+							<div class="row">
+								<h2 class="mb-0">Questions</h2>
+							</div>
 							<div class="row mb-0">
-								<div v-for="(dataset, key) in datasets" class="column">
+								<select v-model="activeDataset" name="datasetPicker">
+									<option
+										:id="key"
+										v-bind:value="key"
+										v-for="(dataset, key) in datasets"
+										>{{ key }}</option
+									>
+								</select>
+								<!-- <div v-for="(dataset, key) in datasets" class="column">
 									<input
 										v-on:change="chooseDataSet"
 										name="datasetPicker"
@@ -67,9 +89,9 @@
 										:id="key"
 									/>
 									<label class="label-inline" :for="key">{{ key }}</label>
-								</div>
+								</div> -->
 							</div>
-							<div style="height: 50vh; overflow: scroll;">
+							<div style="height: 60vh; overflow: scroll;">
 								<ol>
 									<li v-for="qn in questions">
 										{{ qn.question }}
@@ -77,56 +99,83 @@
 								</ol>
 							</div>
 
-							<label for="questionField">Question Input</label>
+							<!-- <label for="questionField">Question Input</label> -->
 							<textarea
 								placeholder="Enter question here"
 								id="questionField"
+								class="mb-0"
 							></textarea>
 							<input
-								class="button-primary"
+								class="button-primary mb-0 mt-0"
 								type="submit"
 								v-on:click="clusterQuestions"
 								value="Post Question"
 							/>
 						</div>
 					</div>
-					<div class="column">
+					<div class="column column-60">
 						<div id="v-for-object" class="container">
-							<h2 class="mb-0">Clusters & Keywords</h2>
+							<div
+								style="display: flex; justify-content: space-between; align-items:  center;"
+							>
+								<h2 class="mb-0">Clusters & Keywords</h2>
+								<input
+									class="button button-outline mb-0 mt-0"
+									type="button"
+									v-on:click="clusterQuestions"
+									value="Refresh"
+								/>
+							</div>
 							<div class="row mb-0">
 								<div class="column">
-									<input
-										v-on:change="toggleAlgorithm"
-										id="tf-idf"
-										name="algorithmPicker"
-										type="radio"
-										:checked="algorithm === 'tf-idf'"
-									/>
-									<label class="label-inline" for="tf-idf">TF-IDF(current)</label>
+									<select v-model="algorithm">
+										<option
+											v-bind:value="algo.name"
+											v-for="algo in algorithmOptions"
+											>{{ algo.name }}</option
+										>
+									</select>
 								</div>
-								<div class="column">
-									<input
-										v-on:change="toggleAlgorithm"
-										id="text-rank"
-										name="algorithmPicker"
-										type="radio"
-										:checked="algorithm === 'text-rank'"
-									/>
-									<label class="label-inline" for="text-rank">Text Rank</label>
+
+								<div v-for="option in algorithmParams" class="column">
+									<div class="row">
+										<label style="align-self: center;" class="column"
+											>{{ option.param }}:</label
+										>
+										<input
+											:type="option.type"
+											class="mb-0 column"
+											:placeholder="option.param"
+											v-model="option.value"
+										/>
+									</div>
 								</div>
-								<div class="column">
+								<div class="column column-30">
 									<input
-										v-on:change="toggleAlgorithm"
-										id="text-rank-idf"
-										name="algorithmPicker"
-										type="radio"
-										:checked="algorithm === 'text-rank-idf'"
+										id="outliers-toggle"
+										type="checkbox"
+										v-model="removeOutliers"
 									/>
-									<label class="label-inline" for="text-rank-idf">TextRank-IDF</label>
+									<label class="label-inline" for="outliers-toggle">
+										Remove Outliers
+									</label>
 								</div>
 							</div>
-							<div class="scrollable pt-1">
-								<div v-for="(cluster, key) in clusters" class="cluster-container">
+							<div class="scrollable">
+								<div class="pb-1">
+									Tags:
+									<span class="tag" v-for="(cluster, key) in clusters">
+										{{ key }} &nbsp;
+									</span>
+								</div>
+								<div v-if="loading" class="cluster-container-loading">
+									Loading ...
+								</div>
+								<div
+									v-if="!loading"
+									v-for="(cluster, key) in clusters"
+									class="cluster-container"
+								>
 									<div class="tag">
 										<h5>
 											<span>{{ key }}</span>
@@ -157,7 +206,6 @@
 					`Are there examples of developing countries where the coordination theory endorsed by the text has been translated into successful policy? `,
 					`Regarding the authors statement that "historical experience of socialist economies showed little or no improvement in the living conditions of the poor" I would entirely dismiss this statement as a falsehood.  Developments in places such as Cuba from the time of the Cuban Revolution that have raised the literacy rate above all first world countries, life expectancy above the US, and high participation in local municipal elections among other advancements.  Of course western chauvinists will only look to the downsides of the Cuban model, downsides almost entirely caused by a death sentence embargo placed on the island in 1958 after they nationalized US oil refineries.  We could also look to African nations such as Burkina Faso, which prospered under leader Thomas Sankara before he was overthrown in a coup for harming the country's relationship with its previous colonial ruler, France.  I suppose my question is why does the author propose this idea of no improvement in these countries despite the constant imperialistic threat of western countries putting them at an inherent disadvantage whenever their policies do not align?`,
 					`In dependency theory, the primary role of elites is to generate profit through exploitation. However, why is it likely for them to handle globalization to continue their enhancing quality of life at the expense of persistent low wages and inadequate living circumstances for those who are in need?`,
-					`.`,
 					`For the International Dependence Model, wouldn't dependency be more linked to the disparities of power and war than through capitalism?`,
 					`Considering the many factors that are included in the analysis of countries and determining whether or not they are developing, is anyone able to say whether one factor is more important than another? (ex. material well-being vs. environment)`,
 					`What brought about the changes in the way that economists viewed under developed countries? How do policy makers and economists pick and choose which theories to apply to fit what would work best for their country?`,
@@ -207,10 +255,8 @@
 					`Is gross national income a better determinant of a country's development? Given that the gross national product includes all assets and earnings owned by residents; therefore, it is to general in order to decide a country's level of development. `,
 					`As developing countries continue to grow will it be difficult to adjust the projected real growth rates of GDP?`,
 					`Does GNI disproportionately value countries with a high population?`,
-					`.`,
 					`With the various ways of measuring a country's economical growth, I believe that there are many ways in which a country's development can be questioned or contradicted. What types of measurements could be more efficient to compare a country's development to another's besides GDP per capita? Would we include something other than materialistic components such as consumption, investments, etc. to something more applicable that deals with the general welfare of a nation?`,
 					`HDI in relation to GDP is not the best evaluation of  a countries development since several factors are not taken in to consideration. Education, life expectancy, child mortality, and income can not solely determine wether a country is developed. However it does help, but still we also have to take into consideration wether a country has a corrupt government, is at war and if resources and wealth are being accounted for accurately. GNI paired with HDI and GDP stats can help us see how fair a regime is but to determine terms development based on a western society remains obsolete in certain places that have a different value system.  `,
-					`.`,
 					`Does anybody think there will ever be a point in time many fortunate and developed countries will be able to set aside higher funds and productions for developing countries in order to better their economy and raise profits? If so, what would the societal implications be and how would the citizens within this society react to such a move? `,
 					`I think it's very interesting to consider the main criteria for these undeveloped countries is based entirely on western thought and influence. This leads to my question being that should there be any surveys or interviews with citizens in these countries to get their personal views on their standard and way of living? It would obviously be virtually impossible to do so but I think data like this would help us gauge what they might consider developed.  `,
 					`Are theories of economic developing utilizing characteristics like poverty and inequality still the most appropriate for the modern world? Is it even possible for consistent economic development in the developing world when wealthy countries like the U.S. continue to exploit natural resources?`,
@@ -254,6 +300,60 @@
 					`Sometimes, why is it that Tom goes all crazy when he is trying to date?`,
 					`Do you think that the best episode is the one where Ben proposes to Leslie?`
 				],
+				"Team-Culture": [
+					`Strong culture of feedback and continues improvement, openness about fears or roadblocks to ask for help`,
+					`Everyone comfortably providing feedback or sharing concerns with everyone else`,
+					`Openness to share and receive feedback regularly`,
+					`I regularly hear suggestion for improvement of my product`,
+					`Team members are willing to take/give feedback `,
+					`Fulfilling commitments/ agreements one makes (or communicating about them) `,
+					`Honesty and being held accountable`,
+					`Being held accountable`,
+					`Provide supportive accountability `,
+					`We are both committed to our responsibilities and flexible in response to changing circumstances`,
+					`Supportive environment `,
+					`Look out for, and help, people doing too much`,
+					`Being supportive and understanding/accommodating (Tanzania is far)`,
+					`Support network (either team-based or direct person to report to)`,
+					`I like a team that motivates me`,
+					`Team members are willing to do work outside of their typical tasks`,
+					`Laughter`,
+					`I like a team with a sense of humor`,
+					`Always assume the best (then discuss)`,
+					`Trust with responsibilities - delegation`,
+					`I like a team that allows flexibility with how tasks are executed`,
+					`My tasks are central enough to the mission that other people notice if I am late`,
+					`Individuals on the team feels connected and a strong sense of belonging to the group`,
+					`Mutual respect within the team`,
+					`Even in their secret hearts everyone feels valued and included `,
+					`Collaborative communication (everyone has a voice)`,
+					`We hear everyone’s voice, without prompting `,
+					`The team is conscientious about inclusion and hearing everyone’s voice`,
+					`People are comfortable giving input in areas where they have different levels of experience `,
+					`Questions, re-questions, going over again, usually opportunities and hone in a subtle, nuanced issue`,
+					`The entire team encourages agile/ transparency and radical candor`,
+					`Team is transparent about decision making`,
+					`Open lines of communication, regular and relevant updates`,
+					`Team members are transparent about their needs in meeting goals`,
+					`Roles and responsibilities agreed upon to match individuals wants and company needs`,
+					`We clearly communicate our expectations with each other`,
+					`Functional team progresses from SMART goals objectives and tasks that can be iterated or changed if needed`,
+					`Timelines and being time conscious`,
+					`Everyone tracking the milestones`,
+					`Keep an eye on our global mission`,
+					`Everyone is respectful and has high ownership and innovation over the project as a whole`,
+					`Team alignment means breakthrough ideas come from all team members`,
+					`Everyone has the mission, vision, milestones in mind as guidance in the every day`,
+					`Every team member actively solves problems/ proposes paths forward`,
+					`Experimentation mentality - move fast and (don’t) break things`,
+					`Proactive mentality`,
+					`A culture of equal ownership where everyone can point out areas of improvement or opportunity`,
+					`What does ownership mean? Thinking beyond the task at hand and towards the goal of a project`,
+					`Strive for elegance, simplicity, and beauty`,
+					`Everyone shares discoveries, updates, successes, failure on slack so I know what is going on`,
+					`Avoid bias/ create equity through explicit expectations`,
+					`We minimize the impact of implicit bias in our decision making.`
+				],
 				Custom: []
 			};
 			const loc = window.location;
@@ -262,24 +362,79 @@
 			var app = new Vue({
 				el: "#app",
 				data: {
-					algorithm: "tf-idf", // tf-idf or text-rank or text-rank-idf
 					questions: [],
 					clusters: {},
-					datasets: datasets
+					datasets: datasets,
+					activeDataset: "Custom",
+					algorithm: "DBSCAN",
+					algorithmOptions: [
+						{
+							name: "K Means",
+							options: [
+								{
+									type: "number",
+									param: "clusters",
+									value: 3
+								}
+							]
+						},
+						{
+							name: "Gaussian K Means",
+							options: [
+								{
+									type: "number",
+									param: "strictness",
+									value: 2
+								}
+							]
+						},
+						{
+							name: "DBSCAN",
+							options: [
+								{
+									type: "number",
+									param: "epsilon",
+									value: 0.25
+								}
+							]
+						},
+						{
+							name: "Agglomerative Clustering",
+							options: [
+								{
+									type: "number",
+									param: "threshold",
+									value: 1
+								}
+							]
+						}
+					],
+					clustersCount: 5,
+					removeOutliers: true,
+					loading: false
+				},
+				computed: {
+					algorithmParams: function() {
+						return this.algorithmOptions.find(i => i.name === this.algorithm).options;
+					}
 				},
 				watch: {
 					algorithm: {
 						handler: "clusterQuestions"
+					},
+					activeDataset: {
+						handler: "chooseDataSet"
 					}
 				},
 				methods: {
 					toggleAlgorithm: function(event) {
-						console.log(event.target.id)
+						console.log(event.target.id);
 						this.algorithm = event.target.id;
 					},
-					chooseDataSet: function(event) {
-						let dataset = this.datasets[event.target.id];
-						if (event.target.id === "Custom") {
+					chooseDataSet: function(datasetId) {
+						let dataset = this.datasets[datasetId];
+						console.log("ID: ", datasetId);
+						if (datasetId === "Custom") {
 							this.questions = [];
 							this.clusters = {};
 						} else {
@@ -301,22 +456,31 @@
 							document.getElementById("questionField").value = "";
 						}
 						if (this.questions.length < 2) return;
+						if (this.clustersCount < 2) return alert("No less than 2 clusters allowed");
 
+						this.loading = true;
 						var xhr = new XMLHttpRequest();
 						xhr.withCredentials = true;
 						xhr.addEventListener("readystatechange", function() {
 							if (this.readyState === 4) {
 								_this.clusters = Object.assign({}, JSON.parse(this.responseText));
 
+								console.log(JSON.parse(this.responseText));
 								console.log(
 									Object.values(JSON.parse(this.responseText)).flat().length
 								);
+								_this.loading = false;
 							}
 						});
 						xhr.open("POST", url);
 						xhr.setRequestHeader("Content-Type", "application/json");
 						xhr.send(
-							JSON.stringify({ questions: this.questions, algorithm: this.algorithm })
+							JSON.stringify({
+								questions: this.questions,
+								algorithm: this.algorithm,
+								algorithmParams: this.algorithmParams,
+								removeOutliers: this.removeOutliers
+							})
 						);
 					}
 				}
