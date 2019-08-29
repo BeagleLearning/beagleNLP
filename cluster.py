@@ -45,6 +45,8 @@ def createClusterMap(corpus, clusteringAnalysis):
         clusters["uncategorized"] = clusters["-1"]
         del clusters["-1"]
     corpus.clusters = clusters
+    print(f"Clusters: {clusters}")#JEFFLAG
+    #Perhaps need to add a check: if we didn't create uncategorized, ensure it exists.
     return corpus
 
 
@@ -81,24 +83,24 @@ def findBestFitCluster(orphanCorpus, corpusCluster={}):
     Parameters:
         orphanCorpus (tagged_question_corpus.TaggedQuestionCorpus): corpus of the questions without a cluster.
         corpusCluster ({tagged_question_corpus.TaggedQuestionCorpus}): Object containing different clusters and their corpuses
-    
+
     Returns:
         xxx
     """
 
-    # corpusCluster = { 
+    # corpusCluster = {
     #     "questions": [ 'and the moon too guys', 'lets show some or a lot of love for the moon!!' ],
     #     "question_vectors": [[], []],
     #     "clusterIds": [ '4', '4' ]
     # }
 
-    # orphanCorpus = [ { 
+    # orphanCorpus = [ {
     #         "id": 11, "question": 'Another one about the sun?', "question_vector": []
     #     },
-    #     { 
+    #     {
     #         "id": 33,
     #         "question": 'What is the distance from the sun though?', "question_vector": [] },
-    #     { 
+    #     {
     #         "id": 37,
     #         "question": 'what\'s the changing factors of the sun and moon together?', "question_vector": []
     # } ]
@@ -110,7 +112,7 @@ def findBestFitCluster(orphanCorpus, corpusCluster={}):
 
     predictions = clf.predict_proba([doc["question_vector"] for doc in orphanCorpus])
     # print(predictions)
-    
+
 
 def agglomerate(corpus, threshold=1.4, ignoreOutliers=True):
     """
@@ -127,11 +129,11 @@ def agglomerate(corpus, threshold=1.4, ignoreOutliers=True):
     """
 
     repMatrix = makeRepresentationMatrix(corpus)
-    
+
     outliers = []
     if ignoreOutliers:
         outliers, repMatrix = getOutliers(repMatrix, corpus=corpus)
-    
+
     clustering = AgglomerativeClustering(
         linkage="ward",
         distance_threshold=threshold,
@@ -141,8 +143,11 @@ def agglomerate(corpus, threshold=1.4, ignoreOutliers=True):
     clustering.fit(repMatrix)
     mapping = [i[1] - i[0] for i in enumerate(outliers)]
     clustering.labels_ = np.insert(clustering.labels_,  mapping, -1)
-    cluserMap = createClusterMap(corpus, clustering)
-    corpus = nameClusters(cluserMap)
+    clusterMap = createClusterMap(corpus, clustering)
+    print(clusterMap)#JEFFLAG
+    corpus = nameClusters(clusterMap)
+    print("The corpus's clusters after naming")
+    print(corpus.clusters)#JEFFLAG
     return corpus
 
 
@@ -175,7 +180,7 @@ def g_kmeans(corpus, strictness=4, ignoreOutliers=True):
 
 
 def kmeans(corpus, n_clusters=5, ignoreOutliers=True):
-    """ 
+    """
     Clusters questions into the number of clusters required.
 
     Parameters:
@@ -290,7 +295,7 @@ def nameClusters(corpus, algorithm="textrank"):
 
 
 def groupSmallClusters(corpus, max_cluster_size=1):
-    """ 
+    """
     Takes all small clusters, given a threshold, and merges them with uncategorized. This is essential for agglomerative clustering and gaussian kmeans where each individual question is considered its own group.
 
     Parameters:
@@ -301,7 +306,7 @@ def groupSmallClusters(corpus, max_cluster_size=1):
     Returns:
         corpus: Corpus with small clusters merged into the uncategorized cluster
     """
-    
+
     smallClusterNames = []
     corpus.clusters["uncategorized"] = corpus.clusters.get("uncategorized", [])
     for c in corpus.clusters:

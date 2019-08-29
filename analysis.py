@@ -44,7 +44,7 @@ nlp.add_pipe(tfidf.generateTextFrequency, name="text_frequency")
 
 
 def clean_text(text, lower=False):
-    """ 
+    """
     Remove special characters
 
     Parameters:
@@ -89,7 +89,7 @@ def tagAndVectorizeCorpus(docs):
         corpus (TaggedQuestionCorpus): returns a tagged corpus with with .idf_ and .vocabulary_         properties.
 
     References:
-        TfidfVectorizer: https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.TfidfVectorizer.html 
+        TfidfVectorizer: https://scikit-learn.org/stable/modules/generated/sklearn.feature_extraction.text.TfidfVectorizer.html
     """
 
     corpus = TaggedQuestionCorpus(docs, nlp)
@@ -113,7 +113,7 @@ def tagAndVectorizeCorpus(docs):
 
 
 def customClusterQuestions(docs, algorithm, parameters, removeOutliers=True):
-    """ 
+    """
     Customized question clustering methods. Implemented as a knock-off to prevent interupting with production builds
 
     Parameters:
@@ -149,7 +149,7 @@ def clusterQuestions(docs):
     return cluster.agglomerate(corpus)
 
 
-def clusterQuestionsOnKeywords(questions, keywords):
+def clusterQuestionsOnKeywords(questions, keywords, do_agglomeration):
     """
     A three step process to find the clusters in a set of questions when some keywords are provided. We are assuming that the list of keywords is always non-exhaustive and so we are expecting the keywords provided to not cover the entire corpus.
 
@@ -161,7 +161,7 @@ def clusterQuestionsOnKeywords(questions, keywords):
     Step 2:
         a. Using the preffered clustering algorithm (agglomarative clustering), cluster the             remaining unclustered questions.
         b. Name the clusters identified and return the question clusters
-    
+
     Step 3:
         a. Find any 2 clusters that share the same keyword and merge those clusters into one.
 
@@ -177,8 +177,13 @@ def clusterQuestionsOnKeywords(questions, keywords):
     print("\n\n Keyword Clusters", keyword_clusters)
     tagged_question_clusters = {}
     if len(uncategorized_questions) > 0:
-        question_clusters = clusterQuestions(uncategorized_questions)
-        tagged_question_clusters = buildTagCluster(question_clusters)
+        if do_agglomeration:
+            print("We did agglomeration")
+            question_clusters = clusterQuestions(uncategorized_questions)
+            tagged_question_clusters = buildTagCluster(question_clusters)
+        else:
+            print("We skipped agglomeration")
+            tagged_question_clusters["uncategorized"] = [qn["id"] for qn in uncategorized_questions]
 
     # Consolidate the two cluster objects, looking for clusters with the same keyword
     for key in keyword_clusters:
@@ -186,7 +191,7 @@ def clusterQuestionsOnKeywords(questions, keywords):
             tagged_question_clusters[key] += keyword_clusters[key]
         else:
             tagged_question_clusters[key] = keyword_clusters[key]
-    
+
     return tagged_question_clusters
 
     # questionsCorpus = buildTaggedCorpus(uncategorized_questions)
@@ -200,20 +205,20 @@ def clusterQuestionsOnKeywords(questions, keywords):
 
 def matchQuestionsWithCategories(questions, clusters):
 
-    # clusters = { 
+    # clusters = {
     #     "questions": [ 'and the moon too', 'lets show some' ],
     #     "clusterIds": [ 4, 4 ]
     # }
 
-    # questions = [ { 
-    #         "id": 11, "question": 'Another one about the sun?' 
+    # questions = [ {
+    #         "id": 11, "question": 'Another one about the sun?'
     #     },
-    #     { 
+    #     {
     #         "id": 33,
     #         "question": 'What is the distance from the sun though?' },
-    #     { 
+    #     {
     #         "id": 37,
-    #         "question": 'what\'s the changing factors of the sun and moon together?' 
+    #         "question": 'what\'s the changing factors of the sun and moon together?'
     # } ]
 
     # Clean and Lemmatize all the questions in the clusters
@@ -245,7 +250,7 @@ def matchQuestionsWithCategories(questions, clusters):
     clusters["question_vectors"] = vectorizer.transform(clusters["questions"]).toarray()
     # for idx, question in enumerate(clusters["questions"]):
     #     clusters["question_vectors"].append(vectorizer.transform(question).toarray())
-    
+
     #
     for idx, question in enumerate(questions):
         question = questions[idx]["question"]
@@ -256,7 +261,7 @@ def matchQuestionsWithCategories(questions, clusters):
     # print("\n Complete Corpus: ", completeCorpus)
 
     cluster.findBestFitCluster(questions, clusters)
-    
+
     return True
 
 
