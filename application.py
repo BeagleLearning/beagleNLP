@@ -57,8 +57,7 @@ def clusterWords():
     application.logger.info(f"Questions: {data['questions']}")
     if "keywords" in data and data['keywords'] is not None and len(data['keywords']) > 0:
         application.logger.info(f"Keywords found! {data['keywords']}")
-        corpus = analysis.clusterQuestionsOnKeywords(
-            data["questions"], data["keywords"])
+        corpus = analysis.clusterQuestionsOnKeywords(data["questions"], data["keywords"], data["agglomerate"])
         corpus = jsonify(corpus)
     else:
         application.logger.info("No keywords found.")
@@ -82,7 +81,7 @@ def categorizeOrphanQuestions():
     corpus = analysis.matchQuestionsWithCategories(data["questions"], data["clusters"])
 
     return jsonify({})
-    
+
 
 @application.route("/play/cluster/", methods=["POST"])
 def playgroundClusterWords():
@@ -109,7 +108,7 @@ def playgroundClusterWords():
     else:
         application.logger.info("No keywords found.")
         corpus = analysis.customClusterQuestions(question_list, algorithm, algorithmParams, removeOutliers)
-        
+
     return jsonify(buildTagCluster(corpus))
 
 
