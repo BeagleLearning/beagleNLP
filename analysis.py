@@ -178,11 +178,9 @@ def clusterQuestionsOnKeywords(questions, keywords, do_agglomeration):
     tagged_question_clusters = {}
     if len(uncategorized_questions) > 0:
         if do_agglomeration:
-            print("We did agglomeration")
             question_clusters = clusterQuestions(uncategorized_questions)
             tagged_question_clusters = buildTagCluster(question_clusters)
         else:
-            print("We skipped agglomeration")
             tagged_question_clusters["uncategorized"] = [qn["id"] for qn in uncategorized_questions]
 
     # Consolidate the two cluster objects, looking for clusters with the same keyword
