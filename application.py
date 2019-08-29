@@ -54,6 +54,9 @@ def clusterWords():
     if len(data["questions"]) < 2:
         raise BeagleError(errors.TOO_FEW_QUESTIONS)
 
+    if not "agglomerate" in data:
+        data["agglomerate"] = False
+
     application.logger.info(f"Questions: {data['questions']}")
     if "keywords" in data and data['keywords'] is not None and len(data['keywords']) > 0:
         application.logger.info(f"Keywords found! {data['keywords']}")

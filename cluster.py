@@ -310,7 +310,7 @@ def groupSmallClusters(corpus, max_cluster_size=1):
     smallClusterNames = []
     corpus.clusters["uncategorized"] = corpus.clusters.get("uncategorized", [])
     for c in corpus.clusters:
-        if len(corpus.clusters[c]) <= max_cluster_size:
+        if len(corpus.clusters[c]) <= max_cluster_size and c != "uncategorized":
             corpus.clusters["uncategorized"] = corpus.clusters["uncategorized"] + \
                 corpus.clusters[c]
             smallClusterNames.append(c)
