@@ -3,8 +3,8 @@ from beagleError import BeagleError
 import errors
 import analysis
 import logging
-from build_tag_cluster import buildTagCluster
-import textrank
+#from build_tag_cluster import buildTagCluster
+#import textrank
 import time
 import os
 
