@@ -6,11 +6,13 @@ import logging
 from build_tag_cluster import buildTagCluster
 import textrank
 import time
+import os
 
-logging.basicConfig(
-    filename='/opt/python/log/application.log',
-    level=logging.DEBUG,
-    format='[%(asctime)s] %(levelname)s in %(module)s: %(message)s')
+if "PYTHON_ENVIRONMENT" in os.environ.keys() and os.environ['PYTHON_ENVIRONMENT'] == "production":
+    logging.basicConfig(
+        filename='/opt/python/log/application.log',
+        level=logging.DEBUG,
+        format='[%(asctime)s] %(levelname)s in %(module)s: %(message)s')
 # some bits of text for the page.
 headerText = '''
     <html>\n<head> <title>Beagle NLP API</title> </head>\n<body>'''
