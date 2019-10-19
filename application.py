@@ -7,10 +7,10 @@ from build_tag_cluster import buildTagCluster
 import textrank
 import time
 
-# logging.basicConfig(
-#     filename='/opt/python/log/application.log',
-#     level=logging.DEBUG,
-#     format='[%(asctime)s] %(levelname)s in %(module)s: %(message)s')
+logging.basicConfig(
+    filename='/opt/python/log/application.log',
+    level=logging.DEBUG,
+    format='[%(asctime)s] %(levelname)s in %(module)s: %(message)s')
 # some bits of text for the page.
 headerText = '''
     <html>\n<head> <title>Beagle NLP API</title> </head>\n<body>'''
