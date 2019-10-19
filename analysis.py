@@ -31,18 +31,18 @@ from spacy.tokens import Doc
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 from cluster_on_keywords import clusterOnKeywords, findKeywordClusters
-# Doc.set_extension("vector", default={})
-# Doc.set_extension("vocabulary_", default={})
-# Doc.set_extension("idf_", default={})
-#
-#
-# # nlp = spacy.load("./model/googlenews-spacy");
-# nlp = spacy.load("en_core_web_lg")
-# nlp.add_pipe(tfidf.generateTextFrequency, name="text_frequency")
-# # Possibly remove the leading statements that might help imply meaning of question
-# # nlp.Defaults.stop_words -= {"what", "when", "who", "where", "why", "how"}
-#
-#
+Doc.set_extension("vector", default={})
+Doc.set_extension("vocabulary_", default={})
+Doc.set_extension("idf_", default={})
+
+
+# nlp = spacy.load("./model/googlenews-spacy");
+nlp = spacy.load("en_core_web_lg")
+nlp.add_pipe(tfidf.generateTextFrequency, name="text_frequency")
+# Possibly remove the leading statements that might help imply meaning of question
+# nlp.Defaults.stop_words -= {"what", "when", "who", "where", "why", "how"}
+
+
 # def clean_text(text, lower=False):
 #     """
 #     Remove special characters
