@@ -42,12 +42,14 @@ def robots():
 
 @application.route("/word2vec/<token>", methods=["GET"])
 def word2vec(token):
+    """ Returns our analysis's vector representation of a token"""
     vector = analysis.getVector(token)
     return jsonify(vector.tolist())
 
 
 @application.route("/cluster/", methods=["POST"])
 def clusterWords():
+    """ Clusters questions sent in request body """
     corpus = None
     data = request.get_json()
     if "questions" not in data:
@@ -62,11 +64,12 @@ def clusterWords():
     application.logger.info(f"Questions: {data['questions']}")
     if "keywords" in data and data['keywords'] is not None and len(data['keywords']) > 0:
         application.logger.info(f"Keywords found! {data['keywords']}")
-        corpus = analysis.clusterQuestionsOnKeywords(data["questions"], data["keywords"], data["agglomerate"])
+        questions, keywords, agglomerate = data["questions"], data["keywords"], data["agglomerate"]
+        corpus = analysis.clusterQuestionsOnKeywords(questions, keywords, agglomerate)
         corpus = jsonify(corpus)
     else:
         application.logger.info("No keywords found.")
-        corpus = analysis.clusterQuestions(data["questions"])
+        corpus = analysis.cluster_questions(data["questions"])
         corpus = jsonify(buildTagCluster(corpus))
 
     return corpus
@@ -112,7 +115,8 @@ def playgroundClusterWords():
             question_list, data["keywords"])
     else:
         application.logger.info("No keywords found.")
-        corpus = analysis.customClusterQuestions(question_list, algorithm, algorithmParams, removeOutliers)
+        corpus = analysis.customClusterQuestions(question_list, algorithm, algorithmParams,
+                                                 removeOutliers)
 
     return jsonify(buildTagCluster(corpus))
 

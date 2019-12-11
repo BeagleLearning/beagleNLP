@@ -13,15 +13,14 @@ Doc.set_extension("textFrequency", default={})
 Doc.set_extension("tfidf", default={})
 Doc.set_extension("globalTfidf", default={})
 
-
-def generateTextFrequency(doc):
-    # count the number of occurances of each lemma in the doc
-    lemmaList = [token.lemma_ for token in doc]
-    tf = {}
-    for lemma in lemmaList:
-        tf[lemma] = tf.get(lemma, 0) + 1
+def generate_text_frequency(doc):
+    """Counts the number of occurances of each lemma in the doc."""
+    lemma_list = [token.lemma_ for token in doc]
+    text_freq = {}
+    for lemma in lemma_list:
+        text_freq[lemma] = text_freq.get(lemma, 0) + 1
     # store the full lemma text frequency map on the doc, and return
-    doc._.textFrequency = tf
+    doc._.textFrequency = text_freq
     return doc
 
 
@@ -50,13 +49,13 @@ def perDocumentTfidf(corpus):
 def tfidf(corpus):
     # count how many documents had each lemma at least once
     totalDocCount = len(corpus.documents)
-    corpus.idf = {}
+    corpus.df = {}
     for doc in corpus.documents:
         for lemma in doc._.textFrequency:
-            corpus.idf[lemma] = corpus.idf.get(lemma, 1)
+            corpus.df[lemma] = corpus.df.get(lemma, 0) + 1
     # convert to an idf score
-    for lemma in corpus.idf:
-        corpus.idf[lemma] = math.log(totalDocCount/corpus.idf[lemma])
+    for lemma in corpus.df:
+        corpus.idf[lemma] = math.log(totalDocCount/corpus.df[lemma])
 
     return perDocumentTfidf(corpus)
 
@@ -69,7 +68,7 @@ def tfidfWithExternalData(corpus):
 #     totalDocCount = len(corpus.documents)
 #     corpus.idf = {}
 #     for doc in corpus.documents:
-        
+
 
 
 # TODO: Clean
@@ -89,7 +88,7 @@ def top_keywords(feature_names, sorted_vectors):
     """ Return the keywords with the highest score value and their score """
     sorted_vectors = sorted_vectors[:5]
     scores, features = [], []
-    
+
     for idx, score in sorted_vectors:
         scores.append(round(score, 3))
         features.append(feature_names[idx])
@@ -97,7 +96,7 @@ def top_keywords(feature_names, sorted_vectors):
     results= {}
     for idx in range(len(features)):
         results[features[idx]]=scores[idx]
-    
+
     return results
 
 def get_vocab(sentences):
@@ -108,7 +107,7 @@ def get_vocab(sentences):
         for word in sentence:
             if word not in vocab:
                 vocab[word] = i
-                i += 1    
+                i += 1
     return vocab
 
 tfidf_transformer = TfidfTransformer(norm="l2", smooth_idf=True, use_idf=True, sublinear_tf=False)
@@ -117,16 +116,16 @@ def calc_keywords(questions_list, corpus):
     vectorizer = CountVectorizer(stop_words=stopwords)
     # word_count_vector = vectorizer.fit_transform(questions_list)
     word_count_vector = vectorizer.fit_transform(corpus)
-    
+
     tfidf_transformer.fit(word_count_vector)
     features = vectorizer.get_feature_names()
-    
+
     doc = ", ".join(questions_list)
     tfidf_vector = tfidf_transformer.transform(vectorizer.transform([doc]))
-    
+
     sorted_vectors = sort_matrix(tfidf_vector.tocoo())
     keywords = top_keywords(features, sorted_vectors)
-    
+
     return max(keywords, key=keywords.get)
     # print(doc)
     # print("\nKeywords")

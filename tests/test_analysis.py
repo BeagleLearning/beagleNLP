@@ -1,9 +1,10 @@
 import os,sys,inspect
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
-sys.path.insert(0,parentdir) 
+sys.path.insert(0,parentdir)
 
 import analysis
+from clean_text import clean_text
 
 # Text cleaning
 def test_clean_text():
