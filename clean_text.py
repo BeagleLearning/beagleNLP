@@ -14,6 +14,8 @@ def clean_text(text, lower=False):
         string: a string that is free of special/punctuation characters
     """
     text = text.lower() if lower else text
-    text = text.replace("'", "")
+    # We have been replacing "'" with nothing. This leads to "countrys" or "hes"
+    # instead of "country" and "he". Replace instead with space if anything.
+    text = text.replace("'", " ")
     text = re.sub("&lt;/?.*?&gt;", "&lt;&gt;", text)
     return re.sub(r"[^\w ]", "", text)

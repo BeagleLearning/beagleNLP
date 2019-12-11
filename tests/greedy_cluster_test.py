@@ -4,6 +4,7 @@ import os
 import inspect
 import sys
 import json
+import timeit
 import spacy
 CURRENT_DIR = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 PARENT_DIR = os.path.dirname(CURRENT_DIR)
@@ -27,8 +28,11 @@ def import_test_data():
 print("Test of greedy clusterer")
 DATA, TEST_DATA = import_test_data()
 TAGGED_DATA = TaggedQuestionCorpus(DATA["request"], NLP)
+start = timeit.default_timer()
 RESULT = cluster_greedily(TAGGED_DATA)
-for cluster in RESULT:
+stop = timeit.default_timer()
+print("Time: ", start - stop)
+for cluster in RESULT.clusters.items():
     print("\n\n\n", cluster[0], "\n\n\n")
     for q in cluster[1]:
         print(q)
