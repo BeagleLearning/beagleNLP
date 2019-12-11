@@ -29,6 +29,8 @@ import textrank
 import time
 from spacy.tokens import Doc
 from sklearn.feature_extraction.text import TfidfVectorizer
+from clean_text import clean_text
+from greedy_clusterer import cluster_greedily
 
 from cluster_on_keywords import clusterOnKeywords, findKeywordClusters
 Doc.set_extension("vector", default={})
@@ -42,24 +44,6 @@ nlp = en_core_web_lg.load()
 nlp.add_pipe(tfidf.generateTextFrequency, name="text_frequency")
 # Possibly remove the leading statements that might help imply meaning of question
 nlp.Defaults.stop_words -= {"what", "when", "who", "where", "why", "how"}
-
-
-def clean_text(text, lower=False):
-    """
-    Remove special characters
-
-    Parameters:
-        text (str): The string to be cleaned
-        lower (bool): A flag to determine whether to lower case the text or not
-            (default is False)
-
-    Returns:
-        string: a string that is free of special/punctuation characters
-    """
-    text = text.lower() if lower else text
-    text = text.replace("'", "")
-    text = re.sub("&lt;/?.*?&gt;", "&lt;&gt;", text)
-    return re.sub("[^\w ]", "", text)
 
 
 def buildCorpus(docs):
@@ -145,9 +129,13 @@ def customClusterQuestions(docs, algorithm, parameters, removeOutliers=True):
         return cluster.agglomerate(corpus, float(params["threshold"]), removeOutliers)
 
 
-def clusterQuestions(docs):
+def cluster_questions_with_agglomeration(docs):
     corpus = tagAndVectorizeCorpus(docs)
     return cluster.agglomerate(corpus)
+
+
+def cluster_questions(docs):
+    return cluster_greedily(TaggedQuestionCorpus(docs, nlp))
 
 
 def clusterQuestionsOnKeywords(questions, keywords, do_agglomeration):
@@ -195,7 +183,7 @@ def clusterQuestionsOnKeywords(questions, keywords, do_agglomeration):
 
     # questionsCorpus = buildTaggedCorpus(uncategorized_questions)
     # keywordsCorpus = buildCorpus(keywords)
-    #removed = keywordsCorpus.removeUnknownDocs()
+    #removed = keywordsCorpus.remove_unknown_docs()
     # if removed:
     #   raise BeagleError(UNKNOWN_KEYWORDS)
     # else:
