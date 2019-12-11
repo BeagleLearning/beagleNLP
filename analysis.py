@@ -41,7 +41,7 @@ Doc.set_extension("idf_", default={})
 # nlp = spacy.load("./model/googlenews-spacy");
 import en_core_web_lg
 nlp = en_core_web_lg.load()
-nlp.add_pipe(tfidf.generateTextFrequency, name="text_frequency")
+nlp.add_pipe(tfidf.generate_text_frequency, name="text_frequency")
 # Possibly remove the leading statements that might help imply meaning of question
 nlp.Defaults.stop_words -= {"what", "when", "who", "where", "why", "how"}
 
