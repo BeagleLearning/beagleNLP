@@ -13,21 +13,23 @@ def __add_keyword_clusters(corpus):
     Args:
         corpus (TaggedQuestionCorpus)
     """
-    corpus.keyword_clusters = {}
+    corpus.all_possible_keyword_clusters = {}
     for doc in corpus.documents:
         for lemma in doc._.textFrequency:
-            kcs = corpus.keyword_clusters
+            kcs = corpus.all_possible_keyword_clusters
             if not lemma in kcs:
                 kcs[lemma] = set()
             kcs[lemma].add(doc)
 
 def __find_next_cluster(keyword_clusters, min_cluster_size, max_cluster_size):
-    """Chooses the smallest available cluster greater than min_cluster_size to include
-    in final set of clusters returned by cluster_greedily.
+    """Chooses the best available cluster larger than min_cluster_size and smaller than
+    max_cluster_size, where "best" means having the keyword that is rarest in the English language
+    (according to wordfreq's corpus) among the options options.
 
     Args:
-        keyword_clusters (dict)
+        keyword_clusters (dict): set of documents for each keyword
         min_cluster_size (int)
+        max_cluster_size (int)
     """
     lemma_dfs = [(k, len(v)) for k, v in keyword_clusters.items()]
     lemma_dfs.sort(key=lambda a: a[1])
@@ -39,16 +41,14 @@ def __find_next_cluster(keyword_clusters, min_cluster_size, max_cluster_size):
             break
         possible_keywords.add(lemma_df[0])
     if len(possible_keywords) == 0:
-        return None
+        return None, None
     rarest_freq = 1
     rarest_keyword = None
-    print("Possible keywords:", possible_keywords)
     for keyword in possible_keywords:
         freq = word_frequency(keyword, "en")
         if 0.0 < freq < rarest_freq:
             rarest_keyword = keyword
             rarest_freq = freq
-    print("Chosen:", rarest_keyword, word_frequency(rarest_keyword, "en"))
     return rarest_keyword, keyword_clusters[rarest_keyword]
 
 def cluster_greedily(corpus):
@@ -57,22 +57,21 @@ def cluster_greedily(corpus):
         corpus (TaggedQuestionCorpus)
     """
     __add_keyword_clusters(corpus)
-    kcs = corpus.keyword_clusters.copy()
+    kcs = corpus.all_possible_keyword_clusters.copy()
     min_cluster_size = int(ceil(len(corpus.documents) * MIN_CLUSTER_FRACTION))
     min_cluster_size = max(min_cluster_size, MIN_CLUSTER_ABSOLUTE)
     max_cluster_size = int(ceil(len(corpus.documents) * MAX_CLUSTER_FRACTION))
-    clusters = []
-    next_cluster = __find_next_cluster(kcs, min_cluster_size, max_cluster_size)
+    clusters = {}
+    next_keyword, next_cluster = __find_next_cluster(kcs, min_cluster_size, max_cluster_size)
     uncategorized_docs = set(corpus.documents)
     while next_cluster:
-        clusters.append(next_cluster)
-        used_docs = next_cluster[1]
-        del kcs[next_cluster[0]]
-        uncategorized_docs = uncategorized_docs.difference(used_docs)
+        clusters[next_keyword] = next_cluster
+        del kcs[next_keyword]
+        uncategorized_docs = uncategorized_docs.difference(next_cluster)
         for doc_set in kcs.values():
-            for doc in used_docs:
+            for doc in next_cluster:
                 doc_set.discard(doc)
-        next_cluster = __find_next_cluster(kcs, min_cluster_size, max_cluster_size)
-    clusters.append(("uncategorized", uncategorized_docs))
-    corpus.clusters = {c[0]: c[1] for c in clusters}
+        next_keyword, next_cluster = __find_next_cluster(kcs, min_cluster_size, max_cluster_size)
+    clusters["uncategorized"] = uncategorized_docs
+    corpus.clusters = clusters
     return corpus
