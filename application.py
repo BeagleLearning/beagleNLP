@@ -1,12 +1,12 @@
+# pylint: disable=E1101
+""" Flask application for Beagle's NLP analysis """
+import os
+import logging
 from flask import Flask, request, jsonify, send_file
+import analysis
+from build_tag_cluster import buildTagCluster
 from beagleError import BeagleError
 import errors
-import analysis
-import logging
-from build_tag_cluster import buildTagCluster
-import textrank
-import time
-import os
 
 if "PYTHON_ENVIRONMENT" in os.environ.keys() and os.environ['PYTHON_ENVIRONMENT'] == "production":
     logging.basicConfig(
@@ -14,9 +14,9 @@ if "PYTHON_ENVIRONMENT" in os.environ.keys() and os.environ['PYTHON_ENVIRONMENT'
         level=logging.DEBUG,
         format='[%(asctime)s] %(levelname)s in %(module)s: %(message)s')
 # some bits of text for the page.
-headerText = '''
+HEADER_TEXT = '''
     <html>\n<head> <title>Beagle NLP API</title> </head>\n<body>'''
-endOfPage = '</body>\n</html>'
+END_OF_PAGE = '</body>\n</html>'
 
 # EB looks for an 'application' callable by default.
 application = Flask(__name__, static_url_path='/static/')
@@ -25,18 +25,20 @@ application.logger.info("Flask app created!")
 
 
 @application.route("/", methods=["GET"])
-def indexRoute():
-    return headerText + "Welcome to the Beagle NLP API" + endOfPage
+def index_route():
+    """ Confirms the app is running """
+    return HEADER_TEXT + "Welcome to the Beagle NLP API" + END_OF_PAGE
 
 
 @application.route("/playground", methods=["GET"])
 def playground():
-    # return render_template('playground.html')
+    """ Renders the playground page """
     return application.send_static_file("playground.html")
 
 
 @application.route("/robots.txt", methods=["GET"])
 def robots():
+    """ Tells robots to behave themselves """
     return send_file("static/robots.txt")
 
 
@@ -48,7 +50,7 @@ def word2vec(token):
 
 
 @application.route("/cluster/", methods=["POST"])
-def clusterWords():
+def cluster_words():
     """ Clusters questions sent in request body """
     corpus = None
     data = request.get_json()
@@ -76,23 +78,21 @@ def clusterWords():
 
 
 @application.route("/cluster/categorize-new-questions", methods=["POST"])
-def categorizeOrphanQuestions():
-    corpus = None
+def categorize_orphan_questions():
+    """ Matches uncategorized questions with keywords ("clusters") sent in request body """
     data = request.get_json()
-    if "clusters" not in data or len(data["clusters"]) == 0:
-        raise BeagleError(errors.MISSING_PARAMETERS_FOR_ROUTE)
-
-    if data["questions"] is None or len(data["questions"]) == 0:
-        raise BeagleError(errors.MISSING_PARAMETERS_FOR_ROUTE)
-
+    for param in ["questions", "clusters"]:
+        if param not in data or data[param] is None or len(data[param]) == 0:
+            raise BeagleError(errors.MISSING_PARAMETERS_FOR_ROUTE)
     application.logger.info(f"Questions: {data['questions']}")
-    corpus = analysis.matchQuestionsWithCategories(data["questions"], data["clusters"])
-
-    return jsonify({})
+    application.logger.info(f"Keywords: {data['clusters']}")
+    clusters = analysis.match_questions_with_categories(data["questions"], data["clusters"])
+    return jsonify(clusters)
 
 
 @application.route("/play/cluster/", methods=["POST"])
-def playgroundClusterWords():
+def playground_cluster_words():
+    """ Experimental route for testing different clustering techniques """
     corpus = None
     data = request.get_json()
     if "questions" not in data:
@@ -102,8 +102,8 @@ def playgroundClusterWords():
         raise BeagleError(errors.TOO_FEW_QUESTIONS)
 
     algorithm = data["algorithm"]
-    algorithmParams = data["algorithmParams"]
-    removeOutliers = data["removeOutliers"]
+    algorithm_params = data["algorithmParams"]
+    remove_outliers = data["removeOutliers"]
     question_list = [
         {
             "id": qn["id"],
@@ -112,17 +112,18 @@ def playgroundClusterWords():
     if "keywords" in data and data['keywords'] is not None:
         application.logger.info(f"Keywords found! {data['keywords']}")
         corpus = analysis.clusterQuestionsOnKeywords(
-            question_list, data["keywords"])
+            question_list, data["keywords"], True)
     else:
         application.logger.info("No keywords found.")
-        corpus = analysis.customClusterQuestions(question_list, algorithm, algorithmParams,
-                                                 removeOutliers)
+        corpus = analysis.customClusterQuestions(question_list, algorithm, algorithm_params,
+                                                 remove_outliers)
 
     return jsonify(buildTagCluster(corpus))
 
 
 @application.errorhandler(BeagleError)
 def handle_invalid_usage(error):
+    """ Simple Flask app error handling """
     response = jsonify(error.to_dict())
     response.status_code = error.status_code
     return response
