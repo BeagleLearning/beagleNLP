@@ -29,6 +29,9 @@ import textrank
 import time
 from spacy.tokens import Doc
 from sklearn.feature_extraction.text import TfidfVectorizer
+from wordfreq import word_frequency
+from clean_text import clean_text
+from greedy_clusterer import cluster_greedily
 
 from cluster_on_keywords import clusterOnKeywords, findKeywordClusters
 Doc.set_extension("vector", default={})
@@ -39,27 +42,9 @@ Doc.set_extension("idf_", default={})
 # nlp = spacy.load("./model/googlenews-spacy");
 import en_core_web_lg
 nlp = en_core_web_lg.load()
-nlp.add_pipe(tfidf.generateTextFrequency, name="text_frequency")
+nlp.add_pipe(tfidf.generate_text_frequency, name="text_frequency")
 # Possibly remove the leading statements that might help imply meaning of question
 nlp.Defaults.stop_words -= {"what", "when", "who", "where", "why", "how"}
-
-
-def clean_text(text, lower=False):
-    """
-    Remove special characters
-
-    Parameters:
-        text (str): The string to be cleaned
-        lower (bool): A flag to determine whether to lower case the text or not
-            (default is False)
-
-    Returns:
-        string: a string that is free of special/punctuation characters
-    """
-    text = text.lower() if lower else text
-    text = text.replace("'", "")
-    text = re.sub("&lt;/?.*?&gt;", "&lt;&gt;", text)
-    return re.sub("[^\w ]", "", text)
 
 
 def buildCorpus(docs):
@@ -112,7 +97,7 @@ def tagAndVectorizeCorpus(docs):
 
     return corpus
 
-
+#Currently unused
 def customClusterQuestions(docs, algorithm, parameters, removeOutliers=True):
     """
     Customized question clustering methods. Implemented as a knock-off to prevent interupting with production builds
@@ -144,12 +129,16 @@ def customClusterQuestions(docs, algorithm, parameters, removeOutliers=True):
     if algorithm == "Agglomerative Clustering":
         return cluster.agglomerate(corpus, float(params["threshold"]), removeOutliers)
 
-
-def clusterQuestions(docs):
+#Currently unused
+def cluster_questions_with_agglomeration(docs):
     corpus = tagAndVectorizeCorpus(docs)
     return cluster.agglomerate(corpus)
 
+#In active use
+def cluster_questions(docs):
+    return cluster_greedily(TaggedQuestionCorpus(docs, nlp))
 
+#Currently unused
 def clusterQuestionsOnKeywords(questions, keywords, do_agglomeration):
     """
     A three step process to find the clusters in a set of questions when some keywords are provided. We are assuming that the list of keywords is always non-exhaustive and so we are expecting the keywords provided to not cover the entire corpus.
@@ -195,15 +184,47 @@ def clusterQuestionsOnKeywords(questions, keywords, do_agglomeration):
 
     # questionsCorpus = buildTaggedCorpus(uncategorized_questions)
     # keywordsCorpus = buildCorpus(keywords)
-    #removed = keywordsCorpus.removeUnknownDocs()
+    #removed = keywordsCorpus.remove_unknown_docs()
     # if removed:
     #   raise BeagleError(UNKNOWN_KEYWORDS)
     # else:
     # return clusterOnKeywords(questionsCorpus, keywordsCorpus)
 
 
-def matchQuestionsWithCategories(questions, clusters):
+#In active use
+def match_questions_with_categories(questions, clusters):
+    """A simple matching algorithm that places questions into a pre-created cluster if:
+        1. The question's lemmatized form contains the cluster's keyword
+        2. The question contains no rarer English words that are also cluster keywords
 
+        Parameters:
+            questions (list[dict]): A list of dictionaries with an id and question (text) field
+            clusters (list[string]): A list of pre-created keywords
+    """
+    cluster_additions = { "uncategorized": [] }
+    for question in questions:
+        clean_question = clean_text(question["question"].replace("\n", ""))
+        cluster_options = set()
+        for token in nlp(clean_question):
+            if token.lemma_ in clusters:
+                cluster_options.add(token.lemma_)
+        if len(cluster_options) == 0:
+            cluster_additions["uncategorized"].append(question["id"])
+            continue
+        best_keyword = None
+        rarest_freq = 1
+        for keyword in cluster_options:
+            if word_frequency(keyword, "en") < rarest_freq:
+                rarest_freq = word_frequency(keyword, "en")
+                best_keyword = keyword
+        if best_keyword in cluster_additions:
+            cluster_additions[best_keyword].append(question["id"])
+        else:
+            cluster_additions[best_keyword] = [question["id"]]
+    return cluster_additions
+
+#Currently unused
+def match_questions_tfidf(questions, clusters):
     # clusters = {
     #     "questions": [ 'and the moon too', 'lets show some' ],
     #     "clusterIds": [ 4, 4 ]
