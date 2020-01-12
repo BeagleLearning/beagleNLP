@@ -1,5 +1,5 @@
-spacy
-https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-2.1.0/en_core_web_lg-2.1.0.tar.gz#egg=en-core-web-lg
+spacy==2.2.0
+https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-2.2.0/en_core_web_lg-2.2.0.tar.gz#egg=en-core-web-lg
 numpy
 scikit-learn
 Flask
