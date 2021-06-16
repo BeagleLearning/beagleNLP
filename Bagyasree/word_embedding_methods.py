@@ -1,10 +1,21 @@
 from gensim.models import Word2Vec, KeyedVectors
 from gensim.models.doc2vec import Doc2Vec, TaggedDocument
+from gensim.models.fasttext import FastText, load_facebook_model
 import math
 import numpy as np
 from clustering_methods import ClusteringMethods
+import io
 
 class WordEmbeddings:
+
+    def load_vectors(self, fname):
+        fin = io.open(fname, 'r', encoding='utf-8', newline='\n', errors='ignore')
+        n, d = map(int, fin.readline().split())
+        data = {}
+        for line in fin:
+            tokens = line.rstrip().split(' ')
+            data[tokens[0]] = map(float, tokens[1:])
+        return data
 
     def get_vectors_for_questions(self, model, questions):
         vectors = []
@@ -40,6 +51,24 @@ class WordEmbeddings:
         else:
             model = Word2Vec(questions, min_count = 1, size = 300)
         
+        vectors = self.get_vectors_for_questions(model,questions)
+        clusters = ClusteringMethods.agglomerative_clustering(vectors, math.floor(math.sqrt(len(questions))))
+        return clusters
+    
+    def fasttext(self, questions, model_type = 'pretrained'):
+
+        if model_type == 'pretrained':
+            fname = 'wiki-news-300d-1M.vec'
+            model = self.load_vectors(fname)
+        else:
+            # Defining values for parameters
+            embedding_size = 300
+            window_size = 5
+            min_word = 5
+            down_sampling = 1e-2
+            
+            model = FastText(questions, size=embedding_size, window=window_size, min_count=min_word, sample=down_sampling, sg=1,iter=100)
+
         vectors = self.get_vectors_for_questions(model,questions)
         clusters = ClusteringMethods.agglomerative_clustering(vectors, math.floor(math.sqrt(len(questions))))
         return clusters

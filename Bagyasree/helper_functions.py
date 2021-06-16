@@ -1,6 +1,9 @@
 import os
 import pickle
 import spacy
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
+from nltk.corpus import stopwords
 
 
 def format_questions(questions, pos, tokenized):
@@ -96,10 +99,44 @@ def display_clusters(questions, clusters, header = ''):
         for i in mapping:
             print("Cluster Number:", i)
             for ques in mapping[i]:
-                print(ques)
+                if len(ques):
+                    print(ques)
             print()
             print()
             print()
+
+
+def preprocess(text_list, convert_to_lower = True, lemmatize = True, remove_special_characters = True, remove_stop_words = True, tokenize = False):
+
+    lemmatizer = WordNetLemmatizer()
+
+    custom_stopword_list = ['how','what','when','where','why','who','u']
+    stop_words = stopwords.words('english')
+    stop_words.extend(custom_stopword_list)
+
+    preprocessed_text_list = []
+
+    for text in text_list:
+        if convert_to_lower:
+            text = text.lower()
+        
+        if lemmatize:
+            text = [lemmatizer.lemmatize(word) for word in word_tokenize(text)]
+        
+        if remove_special_characters and remove_stop_words:
+            text = [word for word in text if word.isalnum() and word not in stop_words]
+        elif remove_special_characters:
+            text = [word for word in text if word.isalnum()]
+        elif remove_stop_words:
+            text = [word for word in text if word not in stop_words]
+        
+        if not tokenize:
+            text = ' '.join(text)
+        
+        preprocessed_text_list.append(text)
+    
+    return preprocessed_text_list
+
         
 
             

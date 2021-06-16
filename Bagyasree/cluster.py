@@ -3,6 +3,7 @@ from word_embedding_methods import WordEmbeddings
 from transformer_embedding_methods import TransformerEmbeddings
 from lsa import LatentSemanticAnalyis
 from lda import LatentDirichletAllocation
+from greedy_clustering import GreedyClustering
 from Testing.testing import Test
 
 test_class = Test()
@@ -51,8 +52,21 @@ def transformer_embeddings(test = True, display = False):
     else:
         test_class.test_clustering_algorithm(TE.transformer_embeddings, display_clusters = display)
 
+#Greedy Clustering
+def greedy_clustering(test = True, display = False):
+    GC = GreedyClustering()
+    if test == False:
+        questions = get_questions('normal')
+        clusters = GC.greedy_clustering(questions)
+        if display:
+            display_clusters(questions,clusters,'GREEDY CLUSTERING')
+    else:
+        test_class.test_clustering_algorithm(GC.greedy_clustering, display_clusters = display)
 
-#word_embeddings()
+
+
+#word_embeddings(test = True, display = False)
 #lda(test = False )
 #lsa(test = True, display = True)
-transformer_embeddings()
+#transformer_embeddings(test = False, display = True)
+greedy_clustering(test = True, display = True)

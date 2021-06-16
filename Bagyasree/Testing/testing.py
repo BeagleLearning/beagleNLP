@@ -1,10 +1,11 @@
 #Testing measures: Extrinsic and Intrinsic. 
-#Extrinsic: Adjusted Rand Index, Normalised Mutual Information Score
-#Intrinsic: High intracluster similarity and low intercluster similarity, 
+#Extrinsic: Adjusted Rand Index, Fowlkes-Mallows Score, Normalised Mutual Information Score
+#Intrinsic: High intracluster similarity and low intercluster similarity (Not implemented yet).
 
 import pandas as pd
 from sklearn.metrics import adjusted_rand_score
 from sklearn.metrics.cluster import normalized_mutual_info_score
+from sklearn.metrics import fowlkes_mallows_score
 
 test_data_path = './Testing/test_data.csv'
 
@@ -121,37 +122,49 @@ class Test:
 
 
     def compute_clustering_similarity(self, predicted_clusters, true_cluster_sets):
-        scores_rand = [] #Array of scores. Each value corresponds to the value obtained for one cluster set (i.e., one column in the test dataset).
+        '''
+            predicted_clusters: Array of cluster numbers corresponding to each question, predicted by the algorithm.
+            true_clusters: Array of actual cluster numbers for each question.
+        '''
+        #Arrays of scores. Each value corresponds to the value obtained for one cluster set (i.e., one column in the test dataset).
+        scores_rand = [] 
         scores_nmi = []
+        scores_fm = []
         for true_clusters in true_cluster_sets:
             if(len(true_clusters)):
                 score_rand = adjusted_rand_score(predicted_clusters, true_clusters)
                 scores_rand.append(score_rand)
                 score_nmi = normalized_mutual_info_score(true_clusters, predicted_clusters)
                 scores_nmi.append(score_nmi)
+                score_fm = fowlkes_mallows_score(true_clusters, predicted_clusters)
+                scores_fm.append(score_fm)
             else:
                 scores_rand.append('NA')
                 scores_nmi.append('NA')
-        return scores_rand, scores_nmi
+                scores_fm.append('NA')
+        return scores_rand, scores_nmi, scores_fm
 
 
-    def test_clustering_algorithm(self, algorithm, display_clusters = False):
+    def test_clustering_algorithm(self, algorithm, arguments = [], display_clusters = False):
         '''
             algorithm: A clustering function which takes in a list of questions as a parameter, and returns a list with cluster numbers corresponding to each question.
+            arguments: A list of optional arguments to be passed to the algorithm. 
         '''
         question_sets = self.get_test_questions()
         cluster_sets = self.get_cluster_sets()
 
         all_scores_rand = {}
         all_scores_nmi = {}
+        all_scores_fm = {}
         no_of_sets = 0
         
         for key in question_sets:
             list_of_questions = question_sets[key]
-            result = algorithm(list_of_questions)
-            scores_rand, scores_nmi = self.compute_clustering_similarity(result,cluster_sets[key])
+            result = algorithm(list_of_questions, *arguments)
+            scores_rand, scores_nmi, scores_fm = self.compute_clustering_similarity(result,cluster_sets[key])
             all_scores_rand[key] = scores_rand
             all_scores_nmi[key] = scores_nmi
+            all_scores_fm[key] = scores_fm
             no_of_sets = len(scores_rand)
         
             if display_clusters:
@@ -163,12 +176,21 @@ class Test:
         print(rand_scores_df)
         print()
 
+        fm_scores_df = pd.DataFrame.from_dict(all_scores_fm, orient="index")
+        fm_scores_df.columns = ['Cluster Set '+str(i) for i in range(1,no_of_sets+1)]
+        print("FOWLKES-MALLOWS SCORES:")
+        print(fm_scores_df)
+        print()
+
         nmi_scores_df = pd.DataFrame.from_dict(all_scores_nmi, orient="index")
         nmi_scores_df.columns = ['Cluster Set '+str(i) for i in range(1,no_of_sets+1)]
         print("NORMALIZED MUTUAL INFORMATION SCORES:")
         print(nmi_scores_df)
+
+        
             
     
+    #Does not work at present.
     def test_tagging_algorithm(self, algorithm):
         '''
             algorithm: A tagging function which takes in a list of questions as a parameter, and returns a list of tags for each question.
