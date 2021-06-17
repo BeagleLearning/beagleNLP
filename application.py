@@ -10,8 +10,7 @@ from beagleError import BeagleError
 import errors
 from use_cluster import get_data_embeddings, best_score_HAC_sparse, HAC_with_Sparsification, get_best_HAC_normal, return_cluster_dict
 import time
-from tests import test_use_cluster 
-import unittest
+from functools import wraps
 
 
 if "PYTHON_ENVIRONMENT" in os.environ.keys() and os.environ['PYTHON_ENVIRONMENT'] == "production":
@@ -29,8 +28,6 @@ application = Flask(__name__, static_url_path='/static/')
 
 application.logger.info("Flask app created!")
 
-suite = unittest.TestLoader().loadTestsFromModule(test_use_cluster)
-unittest.TextTestRunner(verbosity=2).run(suite)
 
 #For timing purposes
 @application.before_request
@@ -43,7 +40,7 @@ def after_req_func(response):
     return response
 
 
-from functools import wraps
+
 def time_this(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -162,32 +159,35 @@ def handle_invalid_usage(error):
 """CUSTOM ROUTE: Sparse HAC"""
 @application.route("/useclustersparse/", methods=["POST"])
 def handleUSECluster():
-    print('This is Sparse HAC!')
+    
     data = request.get_json()
-    print(type(data)) #List
-    print(len(data))
+    application.logger.debug(type(data)) #List
+    application.logger.debug(len(data))
     if(len(data) < 6):
         raise BeagleError(errors.TOO_FEW_QUESTIONS)
     
-    print('Second test!')
+    
     embeddings, data_used_for_demo, q_ids_list = get_data_embeddings(data)
-    return jsonify(return_cluster_dict([int(x) for x in list(best_score_HAC_sparse(embeddings, data_used_for_demo, 2)[1])], q_ids_list)) 
-    #return jsonify([int(x) for x in list(best_score_HAC_sparse(embeddings, data_used_for_demo, 2)[1])]) #q_clusters: allots each q to a cluster
+    best_scores = list(map(int,best_score_HAC_sparse(embeddings, data_used_for_demo, 2)[1]))
+    return jsonify(return_cluster_dict(best_scores,q_ids_list))
     
 
 """CUSTOM ROUTE 2: Normal HAC"""
 @application.route("/useclusternormal/", methods=["POST"])
 def handleUSECluster2():
-    print('This is Normal HAC!')
+    
     data = request.get_json()
-    print(type(data)) #List
-    print(len(data))
+    application.logger.debug((type(data))) #List
+    application.logger.debug(len(data))
     if(len(data) < 6):
         raise BeagleError(errors.TOO_FEW_QUESTIONS)
-    print('Second test!')
+    
     embeddings, data_used_for_demo, q_ids_list = get_data_embeddings(data)
-    #return jsonify(get_best_HAC_normal(embeddings, data_used_for_demo)[0]) #Text Clusters
-    return jsonify(return_cluster_dict([int(x) for x in list(get_best_HAC_normal(embeddings, data_used_for_demo)[1])], q_ids_list))
+    
+    best_scores = list(map(int,get_best_HAC_normal(embeddings, data_used_for_demo)[1]))
+    return jsonify(return_cluster_dict(best_scores,q_ids_list))
+    
+    
 
     
 """CUSTOM ROUTE 3: Condition Based HAC"""
@@ -195,20 +195,26 @@ def handleUSECluster2():
 @time_this
 def handleUSECluster3():
     
-    print('This is Condition Based HAC!')
+    
     data = request.get_json()
-    print(type(data)) #List
-    print(len(data))
+    application.logger.debug((type(data))) #List
+    application.logger.debug(len(data))
     if(len(data) < 6):
         raise BeagleError(errors.TOO_FEW_QUESTIONS) #Communicate we don't support
-    print('Second test!')
+    
     embeddings, data_used_for_demo, q_ids_list = get_data_embeddings(data)
     if(len(data_used_for_demo)<50):
-        #return jsonify(best_score_HAC_sparse(embeddings, data_used_for_demo)[0]) #Text Clusters
-        return jsonify(return_cluster_dict([int(x) for x in list(best_score_HAC_sparse(embeddings, data_used_for_demo, 2)[1])], q_ids_list))
+        
+        best_scores = list(map(int,best_score_HAC_sparse(embeddings, data_used_for_demo, 2)[1]))
+        return jsonify(return_cluster_dict(best_scores,q_ids_list))
+    
+        
     else:
-        #return jsonify(get_best_HAC_normal(embeddings, data_used_for_demo)[0]) #Text Clusters
-        return jsonify(return_cluster_dict([int(x) for x in list(get_best_HAC_normal(embeddings, data_used_for_demo)[1])], q_ids_list))
+        
+        best_scores = list(map(int,get_best_HAC_normal(embeddings, data_used_for_demo)[1]))
+        return jsonify(return_cluster_dict(best_scores,q_ids_list))
+    
+        
 
 
 

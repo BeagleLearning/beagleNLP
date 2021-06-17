@@ -27,12 +27,14 @@ from sklearn import decomposition
 import json
 from beagleError import BeagleError
 import errors
+import logging
 
 #Loading the USE Model with Tensorflow Hub
 
 try:
+    os.environ['TFHUB_CACHE_DIR'] = "C:/Users/arazs/Documents/GitHub/beagleNLP/test_hub"
     embed = hub.load("https://tfhub.dev/google/universal-sentence-encoder-large/5")
-    print('Model Loaded')
+    logging.debug('Model Loaded')
 except:
     raise BeagleError(errors.USE_LOAD_ERROR) #If model not loaded
 
@@ -54,15 +56,15 @@ def get_data_embeddings(data):
             raise BeagleError(errors.INVALID_DATA_TYPE)
         data_used_for_demo.append(i['question'])
         question_ids_list.append(i['question_id'])
-    print('Questions extracted Successfully')
+    logging.debug('Questions extracted Successfully')
     try:
         embeddings = embed(data_used_for_demo) #USE embeds data
     except:
         raise BeagleError(errors.USE_EMBED_ERROR)
-    print('Embedded Successfully')
-    #print(embeddings)
-    #print(data_used_for_demo)
-    #print(question_ids_list)
+    logging.debug('Embedded Successfully')
+    #logging.debug(embeddings)
+    logging.debug(data_used_for_demo)
+    #logging.debug(question_ids_list)
     return (embeddings, data_used_for_demo, question_ids_list) #returns data embeddings and questions to cluster in a list
 
 
@@ -110,12 +112,12 @@ def get_ind(n, nmb): #n is size of matrix (nxn), nmb is the number at the top ha
       #now val is <=0
       #cnt-1 is row number index
       #cnt + prev - 1 is column number index
-      #print(cnt)
-      #print(strt)
-      #print(prev)
+      #logging.debug(cnt)
+      #logging.debug(strt)
+      #logging.debug(prev)
       return (cnt-1, (cnt + prev - 1)) #returns row, column
 
-#print(get_ind(3,3)) should return 1,2
+
 
 
 """
@@ -135,19 +137,16 @@ def get_clusters_from_sim_matrix(n_clus, data_used_for_demo, X):
     for i in range(n_clus):
         grouped[i] = []
 
-    #print(q_clusters)
+    
     for i in range(len(q_clusters)):
-        #print(i)
-        #print(q_clusters[i])
-        #print(grouped[q_clusters[i]])
         grouped[q_clusters[i]].append(data_used_for_demo[i])    
 
     cluster_lens = [len(grouped[i]) for i in grouped.keys()]
 
-    print('Cluster Sizes are:', cluster_lens)
+    logging.debug('Cluster Sizes are:', cluster_lens)
 
-    #print(q_clusters)
-    #print(grouped)
+    logging.debug(q_clusters)
+    logging.debug(grouped)
     return (grouped, q_clusters)
   
 
@@ -213,19 +212,15 @@ def HAC_with_Sparsification(n_clus, embeddings, data_used_for_demo, type_n = 1, 
   #threshold = int((number_of_qs*((number_of_qs/n_clus)-1))/2) Can have n/C - 1 too
   threshold = int((number_of_qs*((number_of_qs/n_clus)))/2)
 
-  #Creating the type 1 (M threshold) Similarity Matrix
-  thresholded_list = sorted(L_mod[threshold:],key = lambda x: x[1][1], reverse=True)
-
-  #Creating the type 2 (2M threshold) Similarity Matrix
-  thresholded_list2 = sorted(L_mod[(2*threshold):],key = lambda x: x[1][1], reverse=True)
-
-  
-  M_sim_matrix = initial_sim_matrix.copy() #Final Type 1 Similarity Matrix
-  M2_sim_matrix = initial_sim_matrix.copy() #Final Type 2 Similarity Matrix
-
   #Sparsifying the Matrix 
 
   if(type_n==2):
+    #Creating the type 2 (2M threshold) Similarity Matrix
+    thresholded_list2 = sorted(L_mod[(2*threshold):],key = lambda x: x[1][1], reverse=True)
+
+    M2_sim_matrix = initial_sim_matrix.copy() #Final Type 2 Similarity Matrix
+
+
     for i in thresholded_list2:
       row, col = get_ind(number_of_qs, i[0])
       M2_sim_matrix[row][col] = 0.0
@@ -233,23 +228,28 @@ def HAC_with_Sparsification(n_clus, embeddings, data_used_for_demo, type_n = 1, 
 
     X = 1 - M2_sim_matrix
   else:
+
+    #Creating the type 1 (M threshold) Similarity Matrix
+    thresholded_list = sorted(L_mod[threshold:],key = lambda x: x[1][1], reverse=True)
+
+    M_sim_matrix = initial_sim_matrix.copy() #Final Type 1 Similarity Matrix
+
     for i in thresholded_list:
   
         row, col = get_ind(number_of_qs, i[0])
-        #print(row)
-        #print(col)
+        
         M_sim_matrix[row][col] = 0.0
         M_sim_matrix[col][row] = 0.0
 
     X = 1 - M_sim_matrix
 
   #For seeing the sparsified matrix
-  #print(X)
+  logging.debug(X)
 
   grouped, q_clusters = get_clusters_from_sim_matrix(n_clus, data_used_for_demo, X)
 
-  #print(grouped)
-  #print(q_clusters)
+  logging.debug(grouped)
+  logging.debug(q_clusters)
   if(return_mat==0):
     return (grouped, q_clusters)
   else:
@@ -273,11 +273,11 @@ function to return those clusters
 
 
 def best_score_HAC_sparse(data_embeddings, data_used_for_demo, type_n = 1):
-    n_clus = [i for i in range(4,11)] #number of clusters from 4 to 10
+    n_clus_options = [i for i in range(4,11)] #number of clusters from 4 to 10
     scores = [] #stores scores for each cluster number
     q_clus_list = [] #stores q_cluster list (for assigning questions to cluster) for each cluster number
     grp_list = [] #stores grouped list(final clusters) for each cluster number
-    for k in n_clus:
+    for k in n_clus_options:
         if(k < len(data_used_for_demo)):
             try:
                 grouped, q_clusters = HAC_with_Sparsification(k, data_embeddings, data_used_for_demo,type_n)
@@ -287,11 +287,11 @@ def best_score_HAC_sparse(data_embeddings, data_used_for_demo, type_n = 1):
             grp_list.append(grouped)
             scores.append([k, metrics.silhouette_score(data_embeddings, q_clusters, metric='euclidean')])
 
-    print(scores)
+    logging.debug(scores)
     best_score = sorted(scores, key = lambda x: x[1], reverse = True)[0][0]
-    print("Optimal Cluster Number with silhoutte score is:",best_score)
-    #print(grp_list[best_score- n_clus[0]])
-    return (grp_list[best_score- n_clus[0]],q_clus_list[best_score- n_clus[0]]) #returns q_cluster list & final clusters for best cluster number
+    logging.debug("Optimal Cluster Number with silhoutte score is:",best_score)
+    
+    return (grp_list[best_score- n_clus_options[0]],q_clus_list[best_score- n_clus_options[0]]) #returns q_cluster list & final clusters for best cluster number
 
 """
 > The objective of this function is to evaluate the best number of clusters & call the Standard HAC function to return those clusters
@@ -306,11 +306,11 @@ def best_score_HAC_sparse(data_embeddings, data_used_for_demo, type_n = 1):
 
 #NORMAL HAC
 def get_best_HAC_normal(data_embeddings, data_used_for_demo):
-        n_clus = [i for i in range(4,11)] #number of clusters from 4 to 10
+        n_clus_options = [i for i in range(4,11)] #number of clusters from 4 to 10
         scores = [] #stores scores for each cluster number
         q_clust_list = [] #stores q_cluster list (for assigning questions to cluster) for each cluster number
 
-        for k in n_clus:
+        for k in n_clus_options:
             if(k < len(data_used_for_demo)):
                 try:
                     cluster = AgglomerativeClustering(k, affinity = 'euclidean', linkage = 'ward')
@@ -320,10 +320,10 @@ def get_best_HAC_normal(data_embeddings, data_used_for_demo):
                 q_clust_list.append(q_clusters)
                 scores.append([k, metrics.silhouette_score(data_embeddings, q_clusters, metric='euclidean')])
 
-        print(scores)
+        logging.debug(scores)
         best_score = sorted(scores, key = lambda x: x[1], reverse = True)[0][0]
-        print("Optimal Cluster Number with silhoutte score is:",best_score)
-        q_cluster_final = q_clust_list[best_score - n_clus[0]] #Final q_cluster list for best evaluated cluster
+        logging.debug("Optimal Cluster Number with silhoutte score is:",best_score)
+        q_cluster_final = q_clust_list[best_score - n_clus_options[0]] #Final q_cluster list for best evaluated cluster
 
         
         grouped = {} #Stores the final clusters
@@ -336,9 +336,9 @@ def get_best_HAC_normal(data_embeddings, data_used_for_demo):
 
         cluster_lens = [len(grouped[i]) for i in grouped.keys()]
 
-        print('Cluster Sizes are:', cluster_lens)
-        #print(grouped)
-        #print(q_cluster_final)
+        logging.debug('Cluster Sizes are:', cluster_lens)
+        logging.debug(grouped)
+        logging.debug(q_cluster_final)
         return (grouped, q_cluster_final)
 
 
