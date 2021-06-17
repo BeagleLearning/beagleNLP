@@ -273,7 +273,7 @@ function to return those clusters
 
 
 def best_score_HAC_sparse(data_embeddings, data_used_for_demo, type_n = 1):
-    n_clus_options = [i for i in range(4,11)] #number of clusters from 4 to 10
+    n_clus_options = range(4,11) #number of clusters from 4 to 10
     scores = [] #stores scores for each cluster number
     q_clus_list = [] #stores q_cluster list (for assigning questions to cluster) for each cluster number
     grp_list = [] #stores grouped list(final clusters) for each cluster number
@@ -306,7 +306,7 @@ def best_score_HAC_sparse(data_embeddings, data_used_for_demo, type_n = 1):
 
 #NORMAL HAC
 def get_best_HAC_normal(data_embeddings, data_used_for_demo):
-        n_clus_options = [i for i in range(4,11)] #number of clusters from 4 to 10
+        n_clus_options = range(4,11) #number of clusters from 4 to 10
         scores = [] #stores scores for each cluster number
         q_clust_list = [] #stores q_cluster list (for assigning questions to cluster) for each cluster number
 
