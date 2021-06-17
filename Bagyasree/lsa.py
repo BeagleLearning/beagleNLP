@@ -3,6 +3,7 @@ from sklearn.decomposition import TruncatedSVD
 from numpy import dot
 from numpy.linalg import norm
 import numpy as np
+from helper_functions import preprocess
 
 class LatentSemanticAnalyis:
     def find_svd(self, group, vectorizer):
@@ -104,8 +105,9 @@ class LatentSemanticAnalyis:
         return ret
 
     def lsa(self, questions):
+        preprocessed_questions = preprocess(questions)
         ngram_vect = TfidfVectorizer(ngram_range = (0,3))
-        groups = self.automatic_controller(questions, 120, ngram_vect)
+        groups = self.automatic_controller(preprocessed_questions, 120, ngram_vect)
     
         clusters = []
         for ques in questions:

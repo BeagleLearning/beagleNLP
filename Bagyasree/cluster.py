@@ -12,12 +12,13 @@ def word_embeddings(test = True, display = False):
     WE = WordEmbeddings()
     if test == False:
         questions = get_questions('normal')
-        clusters = WE.word_2_vec(questions)
+        clusters = WE.fasttext(questions)
         if display:
             questions_untokenized = get_questions('normal',tokenized=False)
             display_clusters(questions_untokenized, clusters, 'WORD EMBEDDINGS WITH AGGLOMERATIVE CLUSTERING')
     else:
-        test_class.test_clustering_algorithm(WE.word_2_vec, display_clusters = display)
+        args = ['pretrained']
+        test_class.test_clustering_algorithm(WE.fasttext, arguments = args, display_clusters = display)
 
 #LDA
 def lda(test = True, display = False):
