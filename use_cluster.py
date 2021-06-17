@@ -299,7 +299,7 @@ def best_score_HAC_sparse(data_embeddings, data_used_for_demo, type_n = 1):
     best_cluster_number = sorted(scores, key = lambda x: x[1], reverse = True)[0][0]
     logging.debug("Optimal Cluster Number with silhoutte score is:",best_cluster_number)
     
-    return (grp_list[best_cluster_number- n_clus_options[0]],q_clus_list[best_cluster_number- n_clus_options[0]]) #returns q_cluster list & final clusters for best cluster number
+    return (grp_list[best_cluster_number- MIN_CLUSTER],q_clus_list[best_cluster_number- MIN_CLUSTER]) #returns q_cluster list & final clusters for best cluster number
 
 """
 > The objective of this function is to evaluate the best number of clusters & call the Standard HAC function to return those clusters
@@ -331,7 +331,7 @@ def get_best_HAC_normal(data_embeddings, data_used_for_demo):
         logging.debug(scores)
         best_cluster_number = sorted(scores, key = lambda x: x[1], reverse = True)[0][0]
         logging.debug("Optimal Cluster Number with silhoutte score is:",best_cluster_number)
-        q_cluster_final = q_clust_list[best_cluster_number - n_clus_options[0]] #Final q_cluster list for best evaluated cluster
+        q_cluster_final = q_clust_list[best_cluster_number - MIN_CLUSTER] #Final q_cluster list for best evaluated cluster
 
         
         grouped = {} #Stores the final clusters
