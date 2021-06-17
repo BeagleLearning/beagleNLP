@@ -28,7 +28,7 @@ application = Flask(__name__, static_url_path='/static/')
 
 application.logger.info("Flask app created!")
 
-
+"""
 #For timing purposes
 @application.before_request
 def before_req_func():
@@ -51,6 +51,7 @@ def time_this(func):
         return r
     return wrapper
 
+"""
 
 @application.route("/", methods=["GET"])
 def index_route():
@@ -192,7 +193,7 @@ def handleUSECluster2():
     
 """CUSTOM ROUTE 3: Condition Based HAC"""
 @application.route("/usecondition/", methods=["POST"])
-@time_this
+
 def handleUSECluster3():
     
     
