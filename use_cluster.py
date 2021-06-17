@@ -55,25 +55,25 @@ MAX_CLUSTER = 11
 """
 
 def get_data_embeddings(data):
-    data_used_for_demo = [] #To store all questions in a list
+    questions_list = [] #To store all questions in a list
     question_ids_list = [] #To store all q_ids
     for i in data:
         if('question' not in i or 'question_id' not in i or 'course_id' not in i):
             raise BeagleError(errors.KEY_ERROR)
         if(type(i['question']) != str or type(i['question_id']) != int or type(i['course_id']) not in [int, str]):
             raise BeagleError(errors.INVALID_DATA_TYPE)
-        data_used_for_demo.append(i['question'])
+        questions_list.append(i['question'])
         question_ids_list.append(i['question_id'])
     logging.debug('Questions extracted Successfully')
     try:
-        embeddings = embed(data_used_for_demo) #USE embeds data
+        embeddings = embed(questions_list) #USE embeds data
     except:
         raise BeagleError(errors.USE_EMBED_ERROR)
     logging.debug('Embedded Successfully')
     #logging.debug(embeddings)
-    logging.debug(data_used_for_demo)
+    logging.debug(questions_list)
     #logging.debug(question_ids_list)
-    return (embeddings, data_used_for_demo, question_ids_list) #returns data embeddings and questions to cluster in a list
+    return (embeddings, questions_list, question_ids_list) #returns data embeddings and questions to cluster in a list
 
 
 """
@@ -137,7 +137,7 @@ def get_ind(n, nmb): #n is size of matrix (nxn), nmb is the number at the top ha
 """
 
 
-def get_clusters_from_sim_matrix(n_clus, data_used_for_demo, X):
+def get_clusters_from_sim_matrix(n_clus, questions_list, X):
     Z = linkage(X,'ward') #Hierarchical Agglomerative Clustering for the input Similarity Matrix
     q_clusters = cut_tree(Z, n_clusters= n_clus).flatten() #Getting Question Clusters for n_clus number of clusters
 
@@ -147,7 +147,7 @@ def get_clusters_from_sim_matrix(n_clus, data_used_for_demo, X):
 
     
     for i in range(len(q_clusters)):
-        grouped[q_clusters[i]].append(data_used_for_demo[i])    
+        grouped[q_clusters[i]].append(questions_list[i])    
 
     cluster_lens = [len(grouped[i]) for i in grouped.keys()]
 
@@ -181,7 +181,7 @@ https://www.researchgate.net/publication/328034827_Improving_Short_Text_Clusteri
 """
 
 
-def HAC_with_Sparsification(n_clus, embeddings, data_used_for_demo, type_n = 1, return_mat = 0):
+def HAC_with_Sparsification(n_clus, embeddings, questions_list, type_n = 1, return_mat = 0):
   number_of_qs = embeddings.shape[0] #Total number of questions
 
   #creating initial similarity matrix from data embeddings
@@ -254,7 +254,7 @@ def HAC_with_Sparsification(n_clus, embeddings, data_used_for_demo, type_n = 1, 
   #For seeing the sparsified matrix
   logging.debug(X)
 
-  grouped, q_clusters = get_clusters_from_sim_matrix(n_clus, data_used_for_demo, X)
+  grouped, q_clusters = get_clusters_from_sim_matrix(n_clus, questions_list, X)
 
   logging.debug(grouped)
   logging.debug(q_clusters)
@@ -280,15 +280,15 @@ function to return those clusters
 
 
 
-def best_score_HAC_sparse(data_embeddings, data_used_for_demo, type_n = 1):
+def best_score_HAC_sparse(data_embeddings, questions_list, type_n = 1):
     n_clus_options = range(MIN_CLUSTER,MAX_CLUSTER) #number of clusters from 4 to 10
     scores = [] #stores scores for each cluster number
     q_clus_list = [] #stores q_cluster list (for assigning questions to cluster) for each cluster number
     grp_list = [] #stores grouped list(final clusters) for each cluster number
     for k in n_clus_options:
-        if(k < len(data_used_for_demo)):
+        if(k < len(questions_list)):
             try:
-                grouped, q_clusters = HAC_with_Sparsification(k, data_embeddings, data_used_for_demo,type_n)
+                grouped, q_clusters = HAC_with_Sparsification(k, data_embeddings, questions_list,type_n)
             except:
                 raise BeagleError(errors.HAC_SPARS_FUN_ERROR) #Error for Number of qs <= Cluster number
             q_clus_list.append(q_clusters)
@@ -313,13 +313,13 @@ def best_score_HAC_sparse(data_embeddings, data_used_for_demo, type_n = 1):
 """
 
 #NORMAL HAC
-def get_best_HAC_normal(data_embeddings, data_used_for_demo):
+def get_best_HAC_normal(data_embeddings, questions_list):
         n_clus_options = range(MIN_CLUSTER,MAX_CLUSTER) #number of clusters from 4 to 10
         scores = [] #stores scores for each cluster number
         q_clust_list = [] #stores q_cluster list (for assigning questions to cluster) for each cluster number
 
         for k in n_clus_options:
-            if(k < len(data_used_for_demo)):
+            if(k < len(questions_list)):
                 try:
                     cluster = AgglomerativeClustering(k, affinity = 'euclidean', linkage = 'ward')
                     q_clusters = cluster.fit_predict(data_embeddings)
@@ -340,7 +340,7 @@ def get_best_HAC_normal(data_embeddings, data_used_for_demo):
 
         
         for i in range(len(q_cluster_final)):
-            grouped[q_cluster_final[i]].append(data_used_for_demo[i])    
+            grouped[q_cluster_final[i]].append(questions_list[i])    
 
         cluster_lens = [len(grouped[i]) for i in grouped.keys()]
 
