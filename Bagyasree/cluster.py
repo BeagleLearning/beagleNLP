@@ -70,4 +70,4 @@ def greedy_clustering(test = True, display = False):
 #lda(test = False )
 #lsa(test = True, display = True)
 #transformer_embeddings(test = False, display = True)
-greedy_clustering(test = True, display = True)
+greedy_clustering(test = True, display = False)
