@@ -26,11 +26,12 @@ class GreedyClustering:
                 else:
                     all_bigrams[bigram] += 1.0
 
+        #normalize wrt number of bigrams/words
         for bigram in all_bigrams:
             bigram_freq = all_bigrams[bigram]
             word_freq = self.tfidf_matrix[bigram[0]]
             if bigram_freq/word_freq > 0.5:
-                self.combined_matrix[bigram[0]] = 1/bigram_freq #normalize
+                self.combined_matrix[bigram[0]] = 1/bigram_freq #normalize 
                 print("COMBINED:",self.combined_matrix[bigram[0]])
             else:
                 self.combined_matrix[bigram[0]] = word_freq * word_frequency(bigram[0],"en") #normalize
