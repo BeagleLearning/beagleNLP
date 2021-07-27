@@ -16,20 +16,27 @@ def deduplicate(questions: list, embedder, threshold=0.7) -> list:
     # check if the list has any contents and if not, return an alert
     if len(questions) == 0:
         raise BeagleError(errors.INVALID_INPUT_EMPTY_LIST)
-
+        
+    # need at least two questions to find duplicates among the set
+    if len(questions) < 2:
+        raise BeagleError(errors.TOO_FEW_QUESTIONS_TO_DUPLICATE)
     
     for question_dict in questions:
         # check that each element of the input list is indeed a dictionary
         if type(question_dict) is not dict:
             raise BeagleError(errors.INVALID_FORMATTING_ERROR)
         # check that each element is properly formatted
-        if (type(question_dict) is dict) & ('id' not in question_dict or 'content' not in question_dict):
+        if ('id' not in question_dict) or ('content' not in question_dict):
             raise BeagleError(errors.INVALID_FORMATTING_ERROR)
         # check that the id and content are not empty
-        if (question_dict['id'] is None ) | (question_dict['content'] is None):
+        if (question_dict['id'] is None ) or (question_dict['content'] is None):
             raise BeagleError(errors.EMPTY_VALUE_ERROR)
-        # check that the id is an integer and the content is a string
-        if type(question_dict['id'] is not int) | (type(question_dict['content']) is not str):
+        # make sure that the id is an integer and the content is a string
+        try:
+            question_dict['id'] = int(question_dict['id'])
+        except:
+            raise BeagleError(errors.UNEXPECTED_DATA_TYPE_ERROR)
+        if  type(question_dict['content']) is not str:
             raise BeagleError(errors.UNEXPECTED_DATA_TYPE_ERROR)
     # remove special characters and keep the ids, the mapping later will be performed on CONTENT, not ID
     questions_without_special_characters = [remove_special_characters(question['content']) for question in questions]

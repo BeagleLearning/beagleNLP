@@ -33,7 +33,6 @@ END_OF_PAGE = '</body>\n</html>'
 
 # EB looks for an 'application' callable by default.
 application = Flask(__name__, static_url_path='/static/')
-
 application.logger.info("Flask app created!")
 
 """
@@ -228,10 +227,12 @@ def handleUSECluster3():
 
 @application.route("/type/", methods=['POST'])
 def classify_question_types():
-    data = json.loads(request.get_json())
+    data = request.get_json()
     if "questions" not in data:
         raise BeagleError(errors.MISSING_PARAMETERS_FOR_ROUTE)
-
+    application.logger.info(f"{type(data['questions'][0])}")
+    application.logger.info(f"{data['questions'][0]}")
+    application.logger.info(f"{type(data['questions'])}")
     categorized_questions = get_predictions(data['questions'], device = device,\
             tokenizer = tokenizer, model=model)
 
@@ -240,13 +241,10 @@ def classify_question_types():
 
 @application.route("/deduplicate/", methods=['POST'])
 def deduplicate_questions():
-    data = json.loads(request.get_json())
+    data = request.get_json()
     if "questions" not in data:
         raise BeagleError(errors.MISSING_PARAMETERS_FOR_ROUTE)
-    
-    # need at least two questions to find duplicates among the set
-    if(len(data['questions']) < 2):
-        raise BeagleError(errors.TOO_FEW_QUESTIONS_TO_DUPLICATE)
+
     grouped_duplicates = deduplicate(data['questions'], embedder = use_embedder)
 
     return jsonify(grouped_duplicates)

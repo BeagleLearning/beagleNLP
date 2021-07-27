@@ -20,7 +20,7 @@ def run_prediction(question: str, device, tokenizer, model) -> int:
     # if a sentence is not a string or an empty string, return nothing
     # the wrapping function will be running in a loop, hence interrupting or raising an error 
     # for a single sentence among possibly hundreds or thousands is not desirable
-    if (type(question) is not str) | (len(str.split())==0):
+    if (type(question) is not str) or (len(question.split())==0):
         return None
 
     # remove special characters from the string that might affect the quality of the prediction
