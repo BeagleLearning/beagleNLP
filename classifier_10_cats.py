@@ -2,6 +2,8 @@ import torch
 # from transformers import AutoTokenizer, AutoModelForSequenceClassification, AutoConfig
 import numpy as np
 from text_preprocessing import remove_special_characters
+from beagleError import BeagleError
+import errors
 
 
 model_location = './resources/10_cats_deberta/torch_hf_deberta_epoch_5.model'
@@ -15,10 +17,10 @@ def run_prediction(question: str, device, tokenizer, model) -> int:
     TODO: cumbersome double-level passing of arguments
     """
 
-    # if a sentence is not a string, return nothing
+    # if a sentence is not a string or an empty string, return nothing
     # the wrapping function will be running in a loop, hence interrupting or raising an error 
     # for a single sentence among possibly hundreds or thousands is not desirable
-    if type(question) is not str:
+    if (type(question) is not str) | (len(str.split())==0):
         return None
 
     # remove special characters from the string that might affect the quality of the prediction
@@ -64,11 +66,11 @@ def get_predictions(questions: list, device, tokenizer, model) -> list:
 
     # check if the input is a list and if not, return an alert
     if type(questions) is not list:
-        return "Invalid input. A list of dictionaries expected."
+        raise BeagleError(errors.INVALID_INPUT_NOT_A_LIST)
     
     #check if the list has any contents and if not, return an alert
     if len(questions) == 0:
-        return "Invalid input. Received an empty list."
+        raise BeagleError(errors.INVALID_INPUT_EMPTY_LIST)
     
     # initiate the final output list
     result_list = []
@@ -76,7 +78,7 @@ def get_predictions(questions: list, device, tokenizer, model) -> list:
     # check if the dictionaries in the input list have the right formatting before starting predictions
     for question_dict in questions:
         if (type(question_dict) is dict) & ('id' not in question_dict or 'content' not in question_dict):
-            return "Invalid formatting detected. Make sure that every element is a dictionary containing 'id' and 'content' keys."
+            raise BeagleError(errors.INVALID_FORMATTING_ERROR)
 
    
     for question_dict in questions:

@@ -244,6 +244,9 @@ def deduplicate_questions():
     if "questions" not in data:
         raise BeagleError(errors.MISSING_PARAMETERS_FOR_ROUTE)
     
+    # need at least two questions to find duplicates among the set
+    if(len(data['questions']) < 2):
+        raise BeagleError(errors.TOO_FEW_QUESTIONS_TO_DUPLICATE)
     grouped_duplicates = deduplicate(data['questions'], embedder = use_embedder)
 
     return jsonify(grouped_duplicates)
@@ -254,22 +257,30 @@ if __name__ == "__main__":
 
     ##### DEBERTA INITIATION AND TORCH DEVICE MOUNT #####
     model_location = './resources/10_cats_deberta/torch_hf_deberta_epoch_5.model'
-    # declare device for torch to mount
-    device = torch.device('cpu') #'cuda' if torch.cuda.is_available()
-    # configuration necessary for the right initiation of the model
-    config = AutoConfig.from_pretrained("microsoft/deberta-base-mnli")
-    config.num_labels = 10
-    # pretrained model initiation code
-    model = AutoModelForSequenceClassification.from_config(config)
-    model.to(device)
-    model.load_state_dict(torch.load(model_location, map_location=torch.device('cpu'))) #TODO: remove hardcoded string if CUDA available
-    # corresponding tokenizer initiation
-    tokenizer = AutoTokenizer.from_pretrained("microsoft/deberta-base-mnli")
+
+    try:
+        # declare device for torch to mount
+        device = torch.device('cpu') #'cuda' if torch.cuda.is_available()
+        # configuration necessary for the right initiation of the model
+        config = AutoConfig.from_pretrained("microsoft/deberta-base-mnli")
+        config.num_labels = 10
+        # pretrained model initiation code
+        model = AutoModelForSequenceClassification.from_config(config)
+        model.to(device)
+        model.load_state_dict(torch.load(model_location, map_location=torch.device('cpu'))) #TODO: remove hardcoded string if CUDA available
+        # corresponding tokenizer initiation
+        tokenizer = AutoTokenizer.from_pretrained("microsoft/deberta-base-mnli")
+    except:
+        raise BeagleError(errors.DEBERTA_LOAD_ERROR) #If model not loaded
+
     ##### ##### ##### #####
 
     ##### UNIVERSAL SENTENCE ENCODER INITIATION #####
     use_location = './resources/use_4'
-    use_embedder = hub.load(use_location)
+    try:
+        use_embedder = hub.load(use_location)
+    except:
+        raise BeagleError(errors.USE_LOAD_ERROR) #If model not loaded
     ##### ##### ##### #####
 
     # Setting debug to True enables debug output. This line should be
