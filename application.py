@@ -230,9 +230,7 @@ def classify_question_types():
     data = request.get_json()
     if "questions" not in data:
         raise BeagleError(errors.MISSING_PARAMETERS_FOR_ROUTE)
-    application.logger.info(f"{type(data['questions'][0])}")
-    application.logger.info(f"{data['questions'][0]}")
-    application.logger.info(f"{type(data['questions'])}")
+
     categorized_questions = get_predictions(data['questions'], device = device,\
             tokenizer = tokenizer, model=model)
 

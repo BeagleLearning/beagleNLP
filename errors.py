@@ -74,8 +74,8 @@ details[HAC_FUN_ERROR] = {
     "status_code": 500,
 }
 
-TOO_FEW_QUESTIONS_TO_DUPLICATE = 2810
-details[TOO_FEW_QUESTIONS_TO_DUPLICATE] = {
+TOO_FEW_QUESTIONS_TO_DEDUPLICATE = 2810
+details[TOO_FEW_QUESTIONS_TO_DEDUPLICATE] = {
     "message": "There are too few questions to deduplicate. Try again when there \
       are two or more.",
     "status_code": 400,
