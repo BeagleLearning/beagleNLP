@@ -1,0 +1,20 @@
+resources/
+|-- 10_cats_deberta/
+    |-- torch_hf_deberta_epoch_5.model
+|
+|-- use_4/
+    |-- assets/
+    |
+    |-- variables/
+	|-- variables.data-00000-of-00001
+	|-- variables.index
+    |
+    |-- saved_model.pb
+
+
+
+You can download the deBERTa retrained model here:
+https://drive.google.com/file/d/1Qq0sw9GYbUQaieMQAOlJYLxjzqM2Hutu/view?usp=sharing
+
+You can download the USE-4 folder with the same structure here:
+https://tfhub.dev/google/universal-sentence-encoder/4

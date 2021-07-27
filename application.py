@@ -12,6 +12,14 @@ from use_cluster import get_data_embeddings, best_score_HAC_sparse, HAC_with_Spa
 import time
 from functools import wraps
 
+# Typing and deduplication imports
+import torch
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, AutoConfig
+import tensorflow_hub as hub
+import json
+from classifier_10_cats import get_predictions
+from use_deduplication import deduplicate
+
 
 if "PYTHON_ENVIRONMENT" in os.environ.keys() and os.environ['PYTHON_ENVIRONMENT'] == "production":
     logging.basicConfig(
@@ -215,13 +223,55 @@ def handleUSECluster3():
         best_scores = list(map(int,get_best_HAC_normal(embeddings, data_used_for_demo)[1]))
         return jsonify(return_cluster_dict(best_scores,q_ids_list))
     
-        
+
+##### TYPING AND DEDUPLICATION ROUTES #####
+
+@application.route("/type/", methods=['POST'])
+def classify_question_types():
+    data = json.loads(request.get_json())
+    if "questions" not in data:
+        raise BeagleError(errors.MISSING_PARAMETERS_FOR_ROUTE)
+
+    categorized_questions = get_predictions(data['questions'], device = device,\
+            tokenizer = tokenizer, model=model)
+
+    return jsonify(categorized_questions)
 
 
+@application.route("/deduplicate/", methods=['POST'])
+def deduplicate_questions():
+    data = json.loads(request.get_json())
+    if "questions" not in data:
+        raise BeagleError(errors.MISSING_PARAMETERS_FOR_ROUTE)
+    
+    grouped_duplicates = deduplicate(data['questions'], embedder = use_embedder)
+
+    return jsonify(grouped_duplicates)
 
 
 # run the app.
 if __name__ == "__main__":
+
+    ##### DEBERTA INITIATION AND TORCH DEVICE MOUNT #####
+    model_location = './resources/10_cats_deberta/torch_hf_deberta_epoch_5.model'
+    # declare device for torch to mount
+    device = torch.device('cpu') #'cuda' if torch.cuda.is_available()
+    # configuration necessary for the right initiation of the model
+    config = AutoConfig.from_pretrained("microsoft/deberta-base-mnli")
+    config.num_labels = 10
+    # pretrained model initiation code
+    model = AutoModelForSequenceClassification.from_config(config)
+    model.to(device)
+    model.load_state_dict(torch.load(model_location, map_location=torch.device('cpu'))) #TODO: remove hardcoded string if CUDA available
+    # corresponding tokenizer initiation
+    tokenizer = AutoTokenizer.from_pretrained("microsoft/deberta-base-mnli")
+    ##### ##### ##### #####
+
+    ##### UNIVERSAL SENTENCE ENCODER INITIATION #####
+    use_location = './resources/use_4'
+    use_embedder = hub.load(use_location)
+    ##### ##### ##### #####
+
     # Setting debug to True enables debug output. This line should be
     # removed before deploying a production app.
     application.run()
