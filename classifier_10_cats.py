@@ -12,16 +12,11 @@ model_location = './resources/10_cats_deberta/torch_hf_deberta_epoch_5.model'
 
 def run_prediction(question: str, device, tokenizer, model) -> int:
     """
-    Takes a question in string format.
-    Returns category index for the given string.
-    TODO: cumbersome double-level passing of arguments
+    Takes a question represented as a string.
+    Needs to be passed the corresponding Torch device, Transformers tokenizer and model objects.
+    Returns category index (integer) for the given question.
+    TODO: solve cumbersome double-level passing of arguments
     """
-
-    # if a sentence is not a string or an empty string, return nothing
-    # the wrapping function will be running in a loop, hence interrupting or raising an error 
-    # for a single sentence among possibly hundreds or thousands is not desirable
-    if (type(question) is not str) or (len(question.split())==0):
-        return None
 
     # remove special characters from the string that might affect the quality of the prediction
     question_without_special_characters = remove_special_characters(question)
@@ -77,15 +72,24 @@ def get_predictions(questions: list, device, tokenizer, model) -> list:
     
     # check if the dictionaries in the input list have the right formatting before starting predictions
     for question_dict in questions:
-        if (type(question_dict) is dict) & ('id' not in question_dict or 'content' not in question_dict):
-            raise BeagleError(errors.INVALID_FORMATTING_ERROR)
-
-   
-    for question_dict in questions:
         # if the current index is not a dict, append a null value, might be an exception
         if type(question_dict) is not dict:
             result_list.append(None)
             continue
+        if (type(question_dict) is dict) and ('id' not in question_dict or 'content' not in question_dict):
+            raise BeagleError(errors.INVALID_FORMATTING_ERROR)
+        if (question_dict['id'] is None ) or (question_dict['content'] is None):
+            raise BeagleError(errors.EMPTY_VALUE_ERROR)
+        if (type(question_dict['id']) is not int) or (type(question_dict['content']) is not str):
+            raise BeagleError(errors.UNEXPECTED_DATA_TYPE_ERROR)
+        # also if a sentence is an empty string, append null value
+        # the wrapping function will be running in a loop, hence interrupting or raising an error 
+        # for a single sentence among possibly hundreds or thousands is not desirable
+        if len(question_dict['content'].split())==0:
+            result_list.append(None)
+            continue
+
+        # go through valid questions and perform per-question prediction
         # initiate the dictionary for the current question
         single_question_result_dict = {}
         single_question_result_dict['id'] = question_dict['id']

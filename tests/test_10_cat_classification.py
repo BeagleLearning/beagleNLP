@@ -5,9 +5,15 @@ import sys
 sys.path.insert(0,'..')
 import errors
 
-class TestDeduplicationRoute(unittest.TestCase):
+class Test10CatsRoute(unittest.TestCase):
 
-    route = "http://localhost:5000/deduplicate/"
+    """
+    This testing suite, when checking for the right results, looks rather
+    for the right structure and data types than explicit right results
+    since the predictions might differ between multiple prediction runs.
+    """
+
+    route = "http://localhost:5000/type/"
 
     def test_empty_list(self):
         data = []
@@ -35,7 +41,8 @@ class TestDeduplicationRoute(unittest.TestCase):
         ]
         json_to_send = {"questions": data}
         res = requests.post(url=self.route, json=json_to_send)
-        self.assertEqual(res.json()['code'], 2814)
+        self.assertEqual(len(res.json()), 3)
+        self.assertIsNone(res.json()[0])
 
     def test_single_question(self):
         data = [
@@ -46,7 +53,9 @@ class TestDeduplicationRoute(unittest.TestCase):
         ]
         json_to_send = {"questions": data}
         res = requests.post(url=self.route, json=json_to_send)
-        self.assertEqual(res.json()['code'], 2810)
+        self.assertEqual(list(res.json()[0].keys()), ['id','type'])
+        self.assertEqual(type(res.json()[0]['id']), int)
+        self.assertEqual(type(res.json()[0]['type']), int)
 
     def test_empty_values_1(self):
         data = [
@@ -57,7 +66,7 @@ class TestDeduplicationRoute(unittest.TestCase):
         ]
         json_to_send = {"questions": data}
         res = requests.post(url=self.route, json=json_to_send)
-        self.assertEqual(res.json()['code'], 2810)
+        self.assertEqual(res.json()['code'], 2815)
 
     def test_empty_values_2(self):
         data = [
@@ -78,7 +87,7 @@ class TestDeduplicationRoute(unittest.TestCase):
         res = requests.post(url=self.route, json=json_to_send)
         self.assertEqual(res.json()['code'], 2815)
 
-    def test_values_not_strings(self):
+    def test_contents_not_strings(self):
         data = [
                 {
                 "id": 1,
@@ -154,7 +163,10 @@ class TestDeduplicationRoute(unittest.TestCase):
         ]
         json_to_send = {"questions": data}
         res = requests.post(url=self.route, json=json_to_send)
-        self.assertEqual(res.json(), [[0], [1], [2]])
+        self.assertEqual(len(res.json()), 3)
+        for result_dict in res.json():
+            self.assertEqual(type(result_dict['id']), int)
+            self.assertEqual(type(result_dict['type']), int)
 
     def test_wrong_data_types(self):
         data = [
@@ -176,7 +188,8 @@ class TestDeduplicationRoute(unittest.TestCase):
             data = json.load(f)
 
         res = requests.post(url=self.route, json=data)
-        self.assertEqual(len(res.json()), 722) # with threshold 0.7 only!
+        self.assertEqual(len(res.json()), 1000)
+
 
     def test_empty_string(self):
         data = [
@@ -191,8 +204,5 @@ class TestDeduplicationRoute(unittest.TestCase):
         ]
         json_to_send = {"questions": data}
         res = requests.post(url=self.route, json=json_to_send)
-        self.assertEqual(res.json(), [[0],[1]])
-
-
-if __name__ == "__main__":
-    unittest.main()
+        self.assertEqual(len(res.json()), 2)
+        self.assertIsNone(res.json()[1])

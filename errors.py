@@ -83,7 +83,7 @@ details[TOO_FEW_QUESTIONS_TO_DEDUPLICATE] = {
 
 DEBERTA_LOAD_ERROR = 2811
 details[DEBERTA_LOAD_ERROR] = {
-    "message": "deBERTa Model was unable to load for some reason",
+    "message": "deBERTa model was unable to load for some reason",
     "status_code": 500,
 }
 
