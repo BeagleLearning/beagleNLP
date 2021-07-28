@@ -22,6 +22,9 @@ def check_right_dict_formatting(question_dict: dict) -> None:
     # make sure that the id is an integer and the content is a string
     if  (type(question_dict['id']) is not int) or (type(question_dict['content']) is not str):
         raise BeagleError(errors.UNEXPECTED_DATA_TYPE_ERROR)
+    # make sure that the string is not empty
+    if len(question_dict['content'].split()) == 0:
+        raise BeagleError(errors.INVALID_QUESTION_EMPTY_STRING_ERROR)
 
 
 def group_duplicates(questions: list, embedder, threshold=0.7) -> list:
@@ -110,7 +113,7 @@ def find_duplicates_one_to_many(target_question: dict, questions_to_compare: lis
 
     # perform the formatting check again for each element in the questions_to_compare list
     for question_dict in questions_to_compare:
-        check_right_dict_formatting(questions_to_compare)
+        check_right_dict_formatting(question_dict)
 
     # remove special characters from the target question
     single_question_without_special_characters = remove_special_characters(target_question['content'])

@@ -36,6 +36,8 @@ END_OF_PAGE = '</body>\n</html>'
 application = Flask(__name__, static_url_path='/static/')
 application.logger.info("Flask app created!")
 
+application.logger.setLevel(logging.DEBUG)
+
 """
 #For timing purposes
 @application.before_request
@@ -232,8 +234,8 @@ def classify_question_types():
     if "questions" not in data:
         raise BeagleError(errors.MISSING_PARAMETERS_FOR_ROUTE)
 
-    categorized_questions = get_predictions(data['questions'], device = device,\
-            tokenizer = tokenizer, model=model)
+    categorized_questions = get_predictions(data['questions'], device=device,\
+            tokenizer=tokenizer, model=model)
 
     return jsonify(categorized_questions)
 
@@ -255,7 +257,8 @@ def find_duplicate_questions():
     if ("questions" not in data) or ("target" not in data):
         raise BeagleError(errors.MISSING_PARAMETERS_FOR_ROUTE)
 
-    duplicate_ids_found = find_duplicates_one_to_many(data['target'], data['questions'], embedder = use_embedder)
+    duplicate_ids_found = find_duplicates_one_to_many(target_question=data['target'],\
+        questions_to_compare=data['questions'], embedder=use_embedder)
 
     return jsonify(duplicate_ids_found)
 

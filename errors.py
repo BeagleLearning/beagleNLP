@@ -129,6 +129,14 @@ details[INVALID_TARGET_QUESTION_ERROR] = {
     "status_code": 500,
 }
 
+INVALID_QUESTION_EMPTY_STRING_ERROR = 2818
+details[INVALID_QUESTION_EMPTY_STRING_ERROR] = {
+    "message": "The target question is an empty string. Should be a dictionary: \
+        {'id': integer,\
+        'content': string}",
+    "status_code": 500,
+}
+
 
 
 #404: Not Found
