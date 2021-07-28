@@ -3,6 +3,7 @@
 import os
 import logging
 from flask import Flask, request, jsonify, send_file, g
+from numpy.core.records import find_duplicate
 import analysis
 import numpy as np
 from build_tag_cluster import buildTagCluster
@@ -18,7 +19,7 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification, Auto
 import tensorflow_hub as hub
 import json
 from classifier_10_cats import get_predictions
-from use_deduplication import deduplicate
+from use_deduplication import group_duplicates, find_duplicates_one_to_many
 
 
 if "PYTHON_ENVIRONMENT" in os.environ.keys() and os.environ['PYTHON_ENVIRONMENT'] == "production":
@@ -237,15 +238,26 @@ def classify_question_types():
     return jsonify(categorized_questions)
 
 
-@application.route("/deduplicate/", methods=['POST'])
-def deduplicate_questions():
+@application.route("/deduplicate/group_duplicates/", methods=['POST'])
+def group_duplicate_questions():
     data = request.get_json()
     if "questions" not in data:
         raise BeagleError(errors.MISSING_PARAMETERS_FOR_ROUTE)
 
-    grouped_duplicates = deduplicate(data['questions'], embedder = use_embedder)
+    grouped_duplicates = group_duplicates(data['questions'], embedder = use_embedder)
 
     return jsonify(grouped_duplicates)
+
+
+@application.route("/deduplicate/find_duplicates/", methods=['POST'])
+def find_duplicate_questions():
+    data = request.get_json()
+    if ("questions" not in data) or ("target" not in data):
+        raise BeagleError(errors.MISSING_PARAMETERS_FOR_ROUTE)
+
+    duplicate_ids_found = find_duplicates_one_to_many(data['target'], data['questions'], embedder = use_embedder)
+
+    return jsonify(duplicate_ids_found)
 
 
 # run the app.

@@ -121,6 +121,14 @@ details[UNEXPECTED_DATA_TYPE_ERROR] = {
     "status_code": 500,
 }
 
+INVALID_TARGET_QUESTION_ERROR = 2817
+details[INVALID_TARGET_QUESTION_ERROR] = {
+    "message": "Unexpected format the target question. Should be a dictionary: \
+        {'id': integer,\
+        'content': string}",
+    "status_code": 500,
+}
+
 
 
 #404: Not Found
