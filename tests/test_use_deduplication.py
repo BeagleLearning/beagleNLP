@@ -5,9 +5,9 @@ import sys
 sys.path.insert(0,'..')
 import errors
 
-class TestDeduplicationRoute(unittest.TestCase):
+class TestDuplicateGroupingRoute(unittest.TestCase):
 
-    route = "http://localhost:5000/deduplicate/"
+    route = "http://localhost:5000/deduplicate/group_duplicates/"
 
     def test_empty_list(self):
         data = []
