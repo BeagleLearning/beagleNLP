@@ -10,7 +10,7 @@ model_location = './resources/10_cats_deberta/torch_hf_deberta_epoch_5.model'
 
 
 
-def run_prediction(question: str, device, tokenizer, model) -> int:
+def get_single_prediction(question: str, device, tokenizer, model) -> int:
     """
     Takes a question represented as a string.
     Needs to be passed the corresponding Torch device, Transformers tokenizer and model objects.
@@ -34,9 +34,10 @@ def run_prediction(question: str, device, tokenizer, model) -> int:
     # pass the string to the corresponding torch mount and reformat as the deBERTa input
     encoded_question = encoded_question.to(device)
 
-    inputs = {'input_ids':      encoded_question['input_ids'],
-          'attention_mask': encoded_question['attention_mask'],
-          }
+    inputs = {
+        'input_ids': encoded_question['input_ids'],
+        'attention_mask': encoded_question['attention_mask'],
+        }
     # run the prediction for the given string
     with torch.no_grad():
         output = model(**inputs).logits.detach().cpu().numpy().flatten()
@@ -74,8 +75,7 @@ def get_predictions(questions: list, device, tokenizer, model) -> list:
     for question_dict in questions:
         # if the current index is not a dict, append a null value, might be an exception
         if type(question_dict) is not dict:
-            result_list.append(None)
-            continue
+            raise BeagleError(errors.INVALID_FORMATTING_ERROR)
         if (type(question_dict) is dict) and ('id' not in question_dict or 'content' not in question_dict):
             raise BeagleError(errors.INVALID_FORMATTING_ERROR)
         if (question_dict['id'] is None ) or (question_dict['content'] is None):
@@ -94,7 +94,7 @@ def get_predictions(questions: list, device, tokenizer, model) -> list:
         single_question_result_dict = {}
         single_question_result_dict['id'] = question_dict['id']
         # pass the content to the prediction function
-        single_question_result_dict['type'] = run_prediction(question_dict['content'], device = device,\
+        single_question_result_dict['type'] = get_single_prediction(question_dict['content'], device = device,\
             tokenizer = tokenizer, model=model)
         # append the dictionary to the list of results
         result_list.append(single_question_result_dict)

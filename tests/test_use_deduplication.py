@@ -7,19 +7,21 @@ import errors
 
 class TestDuplicateGroupingRoute(unittest.TestCase):
 
-    route = "http://localhost:5000/deduplicate/group_duplicates/"
+    route = "http://localhost:5000/deduplicate/all/"
 
     def test_empty_list(self):
         data = []
         json_to_send = {"questions": data}
         res = requests.post(url=self.route, json=json_to_send)
-        self.assertEqual(res.json()['code'], 2813)
+        self.assertEqual(res.json()['code'], 2810)
+        self.assertEqual(res.status_code, 400)
 
     def test_not_a_list(self):
         data = "test_string"
         json_to_send = {"questions": data}
         res = requests.post(url=self.route, json=json_to_send)
         self.assertEqual(res.json()['code'], 2812)
+        self.assertEqual(res.status_code, 500)
 
     def test_element_not_a_dict(self):
         data = [
@@ -36,6 +38,7 @@ class TestDuplicateGroupingRoute(unittest.TestCase):
         json_to_send = {"questions": data}
         res = requests.post(url=self.route, json=json_to_send)
         self.assertEqual(res.json()['code'], 2814)
+        self.assertEqual(res.status_code, 500)
 
     def test_single_question(self):
         data = [
@@ -47,6 +50,7 @@ class TestDuplicateGroupingRoute(unittest.TestCase):
         json_to_send = {"questions": data}
         res = requests.post(url=self.route, json=json_to_send)
         self.assertEqual(res.json()['code'], 2810)
+        self.assertEqual(res.status_code, 400)
 
     def test_empty_values_1(self):
         data = [
@@ -58,6 +62,7 @@ class TestDuplicateGroupingRoute(unittest.TestCase):
         json_to_send = {"questions": data}
         res = requests.post(url=self.route, json=json_to_send)
         self.assertEqual(res.json()['code'], 2810)
+        self.assertEqual(res.status_code, 400)
 
     def test_empty_values_2(self):
         data = [
@@ -77,6 +82,7 @@ class TestDuplicateGroupingRoute(unittest.TestCase):
         json_to_send = {"questions": data}
         res = requests.post(url=self.route, json=json_to_send)
         self.assertEqual(res.json()['code'], 2815)
+        self.assertEqual(res.status_code, 500)
 
     def test_values_not_strings(self):
         data = [
@@ -92,6 +98,7 @@ class TestDuplicateGroupingRoute(unittest.TestCase):
         json_to_send = {"questions": data}
         res = requests.post(url=self.route, json=json_to_send)
         self.assertEqual(res.json()['code'], 2816)
+        self.assertEqual(res.status_code, 500)
 
     def test_invalid_formatting(self):
         data = [
@@ -107,6 +114,7 @@ class TestDuplicateGroupingRoute(unittest.TestCase):
         json_to_send = {"questions": data}
         res = requests.post(url=self.route, json=json_to_send)
         self.assertEqual(res.json()['code'], 2814)
+        self.assertEqual(res.status_code, 500)
 
     def test_no_questions_key(self):
         data = [
@@ -121,6 +129,7 @@ class TestDuplicateGroupingRoute(unittest.TestCase):
         ]
         res = requests.post(url=self.route, json=data)
         self.assertEqual(res.json()['code'], errors.MISSING_PARAMETERS_FOR_ROUTE)
+        self.assertEqual(res.status_code, 404)
 
     def test_id_a_string(self):
         data = [
@@ -136,6 +145,7 @@ class TestDuplicateGroupingRoute(unittest.TestCase):
         json_to_send = {"questions": data}
         res = requests.post(url=self.route, json=json_to_send)
         self.assertEqual(res.json()['code'], 2816)
+        self.assertEqual(res.status_code, 500)
 
     def test_valid_input(self):
         data = [
@@ -155,6 +165,7 @@ class TestDuplicateGroupingRoute(unittest.TestCase):
         json_to_send = {"questions": data}
         res = requests.post(url=self.route, json=json_to_send)
         self.assertEqual(res.json(), [[0], [1], [2]])
+        self.assertEqual(res.status_code, 200)
 
     def test_wrong_data_types(self):
         data = [
@@ -170,6 +181,7 @@ class TestDuplicateGroupingRoute(unittest.TestCase):
         json_to_send = {"questions": data}
         res = requests.post(url=self.route, json=json_to_send)
         self.assertEqual(res.json()['code'], 2816)
+        self.assertEqual(res.status_code, 500)
 
     def test_questions_in_bulk(self):
         with open('./thousand_questions_test.json', 'r') as f:
@@ -177,6 +189,7 @@ class TestDuplicateGroupingRoute(unittest.TestCase):
 
         res = requests.post(url=self.route, json=data)
         self.assertEqual(len(res.json()), 722) # with threshold 0.7 only!
+        self.assertEqual(res.status_code, 200)
 
     def test_empty_string(self):
         data = [
@@ -192,12 +205,13 @@ class TestDuplicateGroupingRoute(unittest.TestCase):
         json_to_send = {"questions": data}
         res = requests.post(url=self.route, json=json_to_send)
         self.assertEqual(res.json()['code'], 2818)
+        self.assertEqual(res.status_code, 500)
 
 
 
 class TestDuplicateDetectionRoute(unittest.TestCase):
 
-    route = "http://localhost:5000/deduplicate/find_duplicates/"
+    route = "http://localhost:5000/deduplicate/compare-one/"
 
     def test_target_empty_list(self):
         data = [
@@ -213,6 +227,7 @@ class TestDuplicateDetectionRoute(unittest.TestCase):
         json_to_send = {"questions": data, "target": []}
         res = requests.post(url=self.route, json=json_to_send)
         self.assertEqual(res.json()['code'], 2814)
+        self.assertEqual(res.status_code, 500)
 
     def test_target_empty_dict(self):
         data = [
@@ -228,6 +243,7 @@ class TestDuplicateDetectionRoute(unittest.TestCase):
         json_to_send = {"questions": data, "target": {}}
         res = requests.post(url=self.route, json=json_to_send)
         self.assertEqual(res.json()['code'], 2814)
+        self.assertEqual(res.status_code, 500)
 
     def test_target_empty_string(self):
         data = [
@@ -247,6 +263,7 @@ class TestDuplicateDetectionRoute(unittest.TestCase):
         json_to_send = {"questions": data, "target": target}
         res = requests.post(url=self.route, json=json_to_send)
         self.assertEqual(res.json()['code'], 2818)
+        self.assertEqual(res.status_code, 500)
 
     def test_not_a_list(self):
         data = "test_string"
@@ -257,12 +274,14 @@ class TestDuplicateDetectionRoute(unittest.TestCase):
         json_to_send = {"questions": data, "target": target}
         res = requests.post(url=self.route, json=json_to_send)
         self.assertEqual(res.json()['code'], 2812)
+        self.assertEqual(res.status_code, 500)
     
     def test_no_target_key_in_json(self):
         data = "test_string"
         json_to_send = {"questions": data}
         res = requests.post(url=self.route, json=json_to_send)
         self.assertEqual(res.json()['code'], "MISSING_PARAMETERS_FOR_ROUTE")
+        self.assertEqual(res.status_code, 404)
 
     def test_element_not_a_dict(self):
         data = [
@@ -283,6 +302,7 @@ class TestDuplicateDetectionRoute(unittest.TestCase):
         json_to_send = {"questions": data, "target": target}
         res = requests.post(url=self.route, json=json_to_send)
         self.assertEqual(res.json()['code'], 2814)
+        self.assertEqual(res.status_code, 500)
 
     def test_single_question(self):
         data = [
@@ -298,6 +318,7 @@ class TestDuplicateDetectionRoute(unittest.TestCase):
         json_to_send = {"questions": data, "target": target}
         res = requests.post(url=self.route, json=json_to_send)
         self.assertEqual(res.json(), [2])
+        self.assertEqual(res.status_code, 200)
 
     def test_empty_values_1(self):
         data = [
@@ -313,6 +334,7 @@ class TestDuplicateDetectionRoute(unittest.TestCase):
         json_to_send = {"questions": data, "target": target}
         res = requests.post(url=self.route, json=json_to_send)
         self.assertEqual(res.json()['code'], 2815)
+        self.assertEqual(res.status_code, 500)
 
     def test_empty_values_2(self):
         data = [
@@ -336,6 +358,7 @@ class TestDuplicateDetectionRoute(unittest.TestCase):
         json_to_send = {"questions": data, "target": target}
         res = requests.post(url=self.route, json=json_to_send)
         self.assertEqual(res.json()['code'], 2815)
+        self.assertEqual(res.status_code, 500)
 
     def test_values_not_strings(self):
         data = [
@@ -355,6 +378,7 @@ class TestDuplicateDetectionRoute(unittest.TestCase):
         json_to_send = {"questions": data, "target": target}
         res = requests.post(url=self.route, json=json_to_send)
         self.assertEqual(res.json()['code'], 2816)
+        self.assertEqual(res.status_code, 500)
 
     def test_invalid_formatting(self):
         data = [
@@ -374,6 +398,7 @@ class TestDuplicateDetectionRoute(unittest.TestCase):
         json_to_send = {"questions": data, "target": target}
         res = requests.post(url=self.route, json=json_to_send)
         self.assertEqual(res.json()['code'], 2814)
+        self.assertEqual(res.status_code, 500)
 
     def test_no_questions_key(self):
         data = [
@@ -393,6 +418,7 @@ class TestDuplicateDetectionRoute(unittest.TestCase):
         json_to_send = {"preguntas": data, "target": target}
         res = requests.post(url=self.route, json=json_to_send)
         self.assertEqual(res.json()['code'], errors.MISSING_PARAMETERS_FOR_ROUTE)
+        self.assertEqual(res.status_code, 404)
 
     def test_id_a_string(self):
         data = [
@@ -412,6 +438,7 @@ class TestDuplicateDetectionRoute(unittest.TestCase):
         json_to_send = {"questions": data, "target": target}
         res = requests.post(url=self.route, json=json_to_send)
         self.assertEqual(res.json()['code'], 2816)
+        self.assertEqual(res.status_code, 500)
 
     def test_valid_input(self):
         data = [
@@ -435,6 +462,7 @@ class TestDuplicateDetectionRoute(unittest.TestCase):
         json_to_send = {"questions": data, "target": target}
         res = requests.post(url=self.route, json=json_to_send)
         self.assertEqual(res.json(), [1])
+        self.assertEqual(res.status_code, 200)
 
     def test_wrong_data_types(self):
         data = [
@@ -454,6 +482,7 @@ class TestDuplicateDetectionRoute(unittest.TestCase):
         json_to_send = {"questions": data, "target": target}
         res = requests.post(url=self.route, json=json_to_send)
         self.assertEqual(res.json()['code'], 2816)
+        self.assertEqual(res.status_code, 500)
 
     def test_questions_in_bulk(self):
         with open('./thousand_questions_test.json', 'r') as f:
@@ -465,6 +494,7 @@ class TestDuplicateDetectionRoute(unittest.TestCase):
         json_to_send = {"questions": data["questions"], "target": target}
         res = requests.post(url=self.route, json=json_to_send)
         self.assertEqual(len(res.json()), 5) # with threshold 0.7 only!
+        self.assertEqual(res.status_code, 200)
 
     def test_empty_string(self):
         data = [
@@ -484,6 +514,7 @@ class TestDuplicateDetectionRoute(unittest.TestCase):
         json_to_send = {"questions": data, "target": target}
         res = requests.post(url=self.route, json=json_to_send)
         self.assertEqual(res.json()['code'], 2818)
+        self.assertEqual(res.status_code, 500)
 
 
 

@@ -36,7 +36,6 @@ END_OF_PAGE = '</body>\n</html>'
 application = Flask(__name__, static_url_path='/static/')
 application.logger.info("Flask app created!")
 
-application.logger.setLevel(logging.DEBUG)
 
 """
 #For timing purposes
@@ -240,7 +239,7 @@ def classify_question_types():
     return jsonify(categorized_questions)
 
 
-@application.route("/deduplicate/group_duplicates/", methods=['POST'])
+@application.route("/deduplicate/all/", methods=['POST'])
 def group_duplicate_questions():
     data = request.get_json()
     if "questions" not in data:
@@ -251,7 +250,7 @@ def group_duplicate_questions():
     return jsonify(grouped_duplicates)
 
 
-@application.route("/deduplicate/find_duplicates/", methods=['POST'])
+@application.route("/deduplicate/compare-one/", methods=['POST'])
 def find_duplicate_questions():
     data = request.get_json()
     if ("questions" not in data) or ("target" not in data):

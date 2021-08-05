@@ -40,10 +40,6 @@ def group_duplicates(questions: list, embedder, threshold=0.7) -> list:
     # check if the input is a list and if not, raise an error
     if type(questions) is not list:
         raise BeagleError(errors.INVALID_INPUT_NOT_A_LIST)
-    
-    # check if the list has any contents and if not, raise an error
-    if len(questions) == 0:
-        raise BeagleError(errors.INVALID_INPUT_EMPTY_LIST)
 
     # need at least two questions to find duplicates in the set
     if len(questions) < 2:
@@ -69,9 +65,7 @@ def group_duplicates(questions: list, embedder, threshold=0.7) -> list:
         # for each sublist of similarity scores, check whether the index of the element is the same
         # as the sublist index in the 'similarities' list. If so, end the loop, since the loop reached
         # the diagonal of 1s in the matrix and we only need to check for similarity once per each pair
-        for similarity_score_ix in range(len(similarities[array_ix])):
-            if similarity_score_ix == array_ix:
-                break
+        for similarity_score_ix in range(array_ix):
             # if a similarity score higher than the threshold is detected, then pair the question
             # to the corresponding previous similar question by its unique_id
             if similarities[array_ix][similarity_score_ix] > threshold:
