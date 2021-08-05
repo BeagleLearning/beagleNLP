@@ -19,14 +19,14 @@ class Test10CatsRoute(unittest.TestCase):
         data = []
         json_to_send = {"questions": data}
         res = requests.post(url=self.route, json=json_to_send)
-        self.assertEqual(res.json()['code'], 2813)
+        self.assertEqual(res.json()['code'], errors.INVALID_INPUT_EMPTY_LIST)
         self.assertEqual(res.status_code, 500)
 
     def test_not_a_list(self):
         data = "test_string"
         json_to_send = {"questions": data}
         res = requests.post(url=self.route, json=json_to_send)
-        self.assertEqual(res.json()['code'], 2812)
+        self.assertEqual(res.json()['code'], errors.INVALID_INPUT_NOT_A_LIST)
         self.assertEqual(res.status_code, 500)
 
     def test_element_not_a_dict(self):
@@ -43,7 +43,7 @@ class Test10CatsRoute(unittest.TestCase):
         ]
         json_to_send = {"questions": data}
         res = requests.post(url=self.route, json=json_to_send)
-        self.assertEqual(res.json()['code'], 2814)
+        self.assertEqual(res.json()['code'], errors.INVALID_FORMATTING_ERROR)
         self.assertEqual(res.status_code, 500)
 
     def test_single_question(self):
@@ -71,7 +71,7 @@ class Test10CatsRoute(unittest.TestCase):
         ]
         json_to_send = {"questions": data}
         res = requests.post(url=self.route, json=json_to_send)
-        self.assertEqual(res.json()['code'], 2815)
+        self.assertEqual(res.json()['code'], errors.EMPTY_VALUE_ERROR)
         self.assertEqual(res.status_code, 500)
 
     def test_empty_values_2(self):
@@ -91,7 +91,7 @@ class Test10CatsRoute(unittest.TestCase):
         ]
         json_to_send = {"questions": data}
         res = requests.post(url=self.route, json=json_to_send)
-        self.assertEqual(res.json()['code'], 2815)
+        self.assertEqual(res.json()['code'], errors.EMPTY_VALUE_ERROR)
         self.assertEqual(res.status_code, 500)
 
     def test_contents_not_strings(self):
@@ -107,7 +107,7 @@ class Test10CatsRoute(unittest.TestCase):
         ]
         json_to_send = {"questions": data}
         res = requests.post(url=self.route, json=json_to_send)
-        self.assertEqual(res.json()['code'], 2816)
+        self.assertEqual(res.json()['code'], errors.UNEXPECTED_DATA_TYPE_ERROR)
         self.assertEqual(res.status_code, 500)
 
     def test_invalid_formatting(self):
@@ -123,7 +123,7 @@ class Test10CatsRoute(unittest.TestCase):
         ]
         json_to_send = {"questions": data}
         res = requests.post(url=self.route, json=json_to_send)
-        self.assertEqual(res.json()['code'], 2814)
+        self.assertEqual(res.json()['code'], errors.INVALID_FORMATTING_ERROR)
         self.assertEqual(res.status_code, 500)
 
     def test_no_questions_key(self):
@@ -154,7 +154,7 @@ class Test10CatsRoute(unittest.TestCase):
         ]
         json_to_send = {"questions": data}
         res = requests.post(url=self.route, json=json_to_send)
-        self.assertEqual(res.json()['code'], 2816)
+        self.assertEqual(res.json()['code'], errors.UNEXPECTED_DATA_TYPE_ERROR)
         self.assertEqual(res.status_code, 500)
 
     def test_valid_input(self):
@@ -194,7 +194,7 @@ class Test10CatsRoute(unittest.TestCase):
         ]
         json_to_send = {"questions": data}
         res = requests.post(url=self.route, json=json_to_send)
-        self.assertEqual(res.json()['code'], 2816)
+        self.assertEqual(res.json()['code'], errors.UNEXPECTED_DATA_TYPE_ERROR)
         self.assertEqual(res.status_code, 500)
 
     def test_questions_in_bulk(self):

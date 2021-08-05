@@ -14,10 +14,7 @@ import time
 from functools import wraps
 
 # Typing and deduplication imports
-import torch
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, AutoConfig
 import tensorflow_hub as hub
-import json
 from classifier_10_cats import get_predictions
 from use_deduplication import group_duplicates, find_duplicates_one_to_many
 
@@ -233,8 +230,7 @@ def classify_question_types():
     if "questions" not in data:
         raise BeagleError(errors.MISSING_PARAMETERS_FOR_ROUTE)
 
-    categorized_questions = get_predictions(data['questions'], device=device,\
-            tokenizer=tokenizer, model=model)
+    categorized_questions = get_predictions(data['questions'])
 
     return jsonify(categorized_questions)
 
@@ -264,26 +260,6 @@ def find_duplicate_questions():
 
 # run the app.
 if __name__ == "__main__":
-
-    ##### DEBERTA INITIATION AND TORCH DEVICE MOUNT #####
-    model_location = './resources/10_cats_deberta/torch_hf_deberta_epoch_5.model'
-
-    try:
-        # declare device for torch to mount
-        device = torch.device('cpu') #'cuda' if torch.cuda.is_available()
-        # configuration necessary for the right initiation of the model
-        config = AutoConfig.from_pretrained("microsoft/deberta-base-mnli")
-        config.num_labels = 10
-        # pretrained model initiation code
-        model = AutoModelForSequenceClassification.from_config(config)
-        model.to(device)
-        model.load_state_dict(torch.load(model_location, map_location=torch.device('cpu'))) #TODO: remove hardcoded string if CUDA available
-        # corresponding tokenizer initiation
-        tokenizer = AutoTokenizer.from_pretrained("microsoft/deberta-base-mnli")
-    except:
-        raise BeagleError(errors.DEBERTA_LOAD_ERROR) #If model not loaded
-
-    ##### ##### ##### #####
 
     ##### UNIVERSAL SENTENCE ENCODER INITIATION #####
     use_location = './resources/use_4'
