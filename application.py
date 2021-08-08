@@ -241,7 +241,7 @@ def group_duplicate_questions():
     if "questions" not in data:
         raise BeagleError(errors.MISSING_PARAMETERS_FOR_ROUTE)
 
-    grouped_duplicates = group_duplicates(data['questions'], embedder = use_embedder)
+    grouped_duplicates = group_duplicates(data['questions'])
 
     return jsonify(grouped_duplicates)
 
@@ -253,21 +253,13 @@ def find_duplicate_questions():
         raise BeagleError(errors.MISSING_PARAMETERS_FOR_ROUTE)
 
     duplicate_ids_found = find_duplicates_one_to_many(target_question=data['target'],\
-        questions_to_compare=data['questions'], embedder=use_embedder)
+        questions_to_compare=data['questions'])
 
     return jsonify(duplicate_ids_found)
 
 
 # run the app.
 if __name__ == "__main__":
-
-    ##### UNIVERSAL SENTENCE ENCODER INITIATION #####
-    use_location = './resources/use_4'
-    try:
-        use_embedder = hub.load(use_location)
-    except:
-        raise BeagleError(errors.USE_LOAD_ERROR) #If model not loaded
-    ##### ##### ##### #####
 
     # Setting debug to True enables debug output. This line should be
     # removed before deploying a production app.

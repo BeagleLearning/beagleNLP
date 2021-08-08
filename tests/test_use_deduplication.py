@@ -204,8 +204,8 @@ class TestDuplicateGroupingRoute(unittest.TestCase):
         ]
         json_to_send = {"questions": data}
         res = requests.post(url=self.route, json=json_to_send)
-        self.assertEqual(res.json()['code'], errors.INVALID_QUESTION_EMPTY_STRING_ERROR)
-        self.assertEqual(res.status_code, 500)
+        self.assertEqual(len(res.json()), 2)
+        self.assertEqual(res.status_code, 200)
 
 
 
@@ -513,8 +513,8 @@ class TestDuplicateDetectionRoute(unittest.TestCase):
         }
         json_to_send = {"questions": data, "target": target}
         res = requests.post(url=self.route, json=json_to_send)
-        self.assertEqual(res.json()['code'], errors.INVALID_QUESTION_EMPTY_STRING_ERROR)
-        self.assertEqual(res.status_code, 500)
+        self.assertEqual(res.json(), [36])
+        self.assertEqual(res.status_code, 200)
 
 
 

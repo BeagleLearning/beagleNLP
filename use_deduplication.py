@@ -3,6 +3,17 @@ from beagleError import BeagleError
 import errors
 import numpy as np
 from text_preprocessing import remove_special_characters
+import tensorflow_hub as hub
+
+##### UNIVERSAL SENTENCE ENCODER INITIATION #####
+use_link = "https://tfhub.dev/google/universal-sentence-encoder/4"
+# make hub download the model instead of looking for the cached version
+force_download_upon_reset = "?tf-hub-format=compressed"
+try:
+    embedder = hub.load(use_link+force_download_upon_reset)
+except:
+    raise BeagleError(errors.USE_LOAD_ERROR) #If model not loaded
+##### ##### ##### #####
 
 
 def check_right_dict_formatting(question_dict: dict) -> None:
@@ -22,12 +33,10 @@ def check_right_dict_formatting(question_dict: dict) -> None:
     # make sure that the id is an integer and the content is a string
     if  (type(question_dict['id']) is not int) or (type(question_dict['content']) is not str):
         raise BeagleError(errors.UNEXPECTED_DATA_TYPE_ERROR)
-    # make sure that the string is not empty
-    if len(question_dict['content'].split()) == 0:
-        raise BeagleError(errors.INVALID_QUESTION_EMPTY_STRING_ERROR)
 
 
-def group_duplicates(questions: list, embedder, threshold=0.7) -> list:
+
+def group_duplicates(questions: list, threshold=0.7) -> list:
     """
     Accepts a list of dictionaries.
     Each dictionary is expected to contain the following keys and data types:
@@ -84,7 +93,7 @@ def group_duplicates(questions: list, embedder, threshold=0.7) -> list:
     return [similar_questions_list for similar_questions_list in similar_questions_grouped_by_unique_id.values()]
 
 
-def find_duplicates_one_to_many(target_question: dict, questions_to_compare: list, embedder, threshold=0.7) -> list:
+def find_duplicates_one_to_many(target_question: dict, questions_to_compare: list, threshold=0.7) -> list:
     """
     Accepts a target question and a list of dictionaries representing the questions to compare.
     Each dictionary is expected to contain the following keys and data types:
@@ -96,6 +105,8 @@ def find_duplicates_one_to_many(target_question: dict, questions_to_compare: lis
     """
     # check the right format of the target question
     check_right_dict_formatting(target_question)
+    if len(target_question['content'].split()) == 0:
+        raise BeagleError(errors.INVALID_QUESTION_EMPTY_STRING_ERROR)
 
     # check if the questions_to_compare is a list and if not, return an alert
     if type(questions_to_compare) is not list:
