@@ -188,17 +188,31 @@ class Test:
         print(nmi_scores_df)
 
         
-            
+    def display_tags(self, tagged_questions, header):
+        print("SET ",header)
+        print()
+        print()
+        for question in tagged_questions:
+            print("QUESTION: ",question)
+            print('TAGS: ',', '.join(tagged_questions[question]))
+            print()
+        print()
+        print()
+        print()
+        print()
     
     #Does not work at present.
-    def test_tagging_algorithm(self, algorithm):
+    def test_tagging_algorithm(self, algorithm, arguments = [], display_tags = False):
         '''
             algorithm: A tagging function which takes in a list of questions as a parameter, and returns a list of tags for each question.
+            arguments: A list of optional arguments to be passed to the algorithm. 
         '''
         question_sets = self.get_test_questions()
         for key in question_sets:
             list_of_questions = question_sets[key]
-            result = algorithm(list_of_questions)
+            result = algorithm(list_of_questions, *arguments)
+            if display_tags:
+                self.display_tags(result, key)
 
 if __name__ == '__main__':
     t = Test()

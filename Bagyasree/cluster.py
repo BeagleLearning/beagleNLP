@@ -64,10 +64,21 @@ def greedy_clustering(test = True, display = False):
     else:
         test_class.test_clustering_algorithm(GC.greedy_clustering, display_clusters = display)
 
+def gaussian_mixture_model(test = True, display = False):
+    GMM = WordEmbeddings()
+    if test == False:
+        questions = get_questions('normal', tokenized = False)
+        clusters = GMM.universal_sentence_encoder(questions)
+        if display:
+            display_clusters(questions, clusters, 'GAUSSIAN MIXTURE MODEL')
+
+    else:
+        test_class.test_clustering_algorithm(GMM.universal_sentence_encoder, display_clusters = display)
 
 
 #word_embeddings(test = True, display = False)
 #lda(test = False )
 #lsa(test = True, display = True)
 #transformer_embeddings(test = False, display = True)
-greedy_clustering(test = True, display = False)
+#greedy_clustering(test = True, display = False)
+gaussian_mixture_model(test = True, display = True)

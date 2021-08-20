@@ -1,9 +1,12 @@
 import os
 import pickle
+from nltk.corpus.reader import tagged
 import spacy
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import stopwords
+from sklearn.metrics.pairwise import cosine_similarity
+import numpy as np
 
 
 def format_questions(questions, pos, tokenized):
@@ -105,7 +108,6 @@ def display_clusters(questions, clusters, header = ''):
             print()
             print()
 
-
 def preprocess(text_list, convert_to_lower = True, lemmatize = True, remove_special_characters = True, remove_stop_words = True, tokenize = False):
 
     lemmatizer = WordNetLemmatizer()
@@ -137,6 +139,49 @@ def preprocess(text_list, convert_to_lower = True, lemmatize = True, remove_spec
     
     return preprocessed_text_list
 
+def intracluster_similarity(clusters, question_vectors):
+    mapping = {}
+    for i in range(0,len(clusters)):
+        if clusters[i] not in mapping:
+            mapping[clusters[i]] = []
+        mapping[clusters[i]].append(question_vectors[i])
+
+    print("LEN MAPPING:",len(mapping))
+    cosine_similarities = []
+    for cluster in mapping:
+        cosine_array = cosine_similarity(mapping[cluster])
+        vals = []
+        for i in range(0,len(mapping[cluster])):
+            for j in range(i+1,len(mapping[cluster])):
+                vals.append(cosine_array[i,j])
+
+        cosine_similarities.append(np.mean(vals))
+    
+    return cosine_similarities
+
+def intercluster_similarity(clusters, question_vectors):
+    mapping = {}
+    for i in range(0,len(clusters)):
+        if clusters[i] not in mapping:
+            mapping[clusters[i]] = []
+        mapping[clusters[i]].append(question_vectors[i])
+    
+    print("LEN MAPPING:",len(mapping))
+    cosine_similarities = {}
+    for i in range(0,len(mapping)):
+        for j in range(i+1,len(mapping)):
+            cosine_array = cosine_similarity(mapping[i],mapping[j])
+            row_means = cosine_array.mean(axis = 1)
+            cosine_similarities[(i,j)] = np.mean(row_means)
         
+    return cosine_similarities
+
+
+########################################################################################################################################
+
+
+def display_tags(tagged_questions):
+    for question in tagged_questions:
+        print(question, ": ",', '.join(tagged_questions[question]))
 
             

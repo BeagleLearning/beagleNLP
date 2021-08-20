@@ -1,6 +1,9 @@
+
 from gensim.models import Word2Vec, KeyedVectors
 from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 from gensim.models.fasttext import FastText, load_facebook_model
+import tensorflow as tf
+import tensorflow_hub as hub
 import math
 import numpy as np
 from clustering_methods import ClusteringMethods
@@ -52,7 +55,8 @@ class WordEmbeddings:
             model = Word2Vec(questions, min_count = 1, size = 300)
         
         vectors = self.get_vectors_for_questions(model,questions)
-        clusters = ClusteringMethods.agglomerative_clustering(vectors, math.floor(math.sqrt(len(questions))))
+        #clusters = ClusteringMethods.agglomerative_clustering(vectors, math.floor(math.sqrt(len(questions))))
+        clusters = ClusteringMethods.gaussian_mixture_models(vectors, math.floor(math.sqrt(len(questions))))
         return clusters
     
     def fasttext(self, questions, model_type = 'pretrained'):
@@ -81,5 +85,14 @@ class WordEmbeddings:
         for i, ques in enumerate(questions):
             training_data.append(dmodel.docvecs[i])
         
-        clusters = ClusteringMethods.agglomerative_clustering(training_data, math.sqrt(len(questions)))
+        clusters = ClusteringMethods.agglomerative_clustering(training_data, math.floor(math.sqrt(len(questions))))
+        return clusters
+
+    def universal_sentence_encoder(self, questions):
+        embed = hub.load("https://tfhub.dev/google/universal-sentence-encoder/4")
+        vectors = embed(questions)
+        clusters = ClusteringMethods.gaussian_mixture_models(vectors, math.floor(math.sqrt(len(questions))))
+        # clusters = ClusteringMethods.agglomerative_clustering(vectors, math.floor(math.sqrt(len(questions))))
+        # clusters = ClusteringMethods.kmeans_clustering(vectors, math.floor(math.sqrt(len(questions))))
+
         return clusters
