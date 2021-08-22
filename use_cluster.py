@@ -28,12 +28,16 @@ import json
 from beagleError import BeagleError
 import errors
 import logging
+import spacy
+import math
+
 
 #Loading the USE Model with Tensorflow Hub
 
 try:
-    os.environ['TFHUB_CACHE_DIR'] = "C:/Users/arazs/Documents/GitHub/beagleNLP/test_hub"
+    #os.environ['TFHUB_CACHE_DIR'] = "C:/Users/arazs/Documents/GitHub/beagleNLP/test_hub"
     embed = hub.load("https://tfhub.dev/google/universal-sentence-encoder-large/5")
+    nlp = spacy.load("en_core_web_lg")
     logging.debug('Model Loaded')
 except:
     raise BeagleError(errors.USE_LOAD_ERROR) #If model not loaded
@@ -367,3 +371,338 @@ def return_cluster_dict(q_cluster, q_ids_list):
             final_clusters[q_cluster[indx]].append(q_ids_list[indx])
 
     return final_clusters
+
+
+"""
+This function is to test generating labels for each cluster based on Nearest Keyword to Centroid Method
+Both word and document vectors with USE
+"""
+
+def return_cluster_labels(embeddings, qs_list,q_ids_list,final_clusters): #Single most nearest word to centroid
+    num_clus = len(final_clusters)
+    for clus in range(num_clus):
+        clus_ids = final_clusters[clus]
+        clus_embeddings = []
+        clus_qs = []
+        for id in clus_ids:
+            q_index = q_ids_list.index(id)
+            clus_embeddings.append(embeddings[q_index])
+            clus_qs.append(qs_list[q_index])
+        clus_centroid = np.mean(clus_embeddings, axis=0)
+        vec_to_centroid = clus_centroid - clus_embeddings
+        distances = np.linalg.norm(vec_to_centroid, axis=1)
+        minIndex = np.argmin(distances)
+        print(clus_qs)
+        print(clus_qs[minIndex])
+
+        #print(clus_centroid)
+
+def return_cluster_labels2(embeddings, qs_list,q_ids_list,final_clusters): #2 nearest words to centroid
+    parts_of_speech = ["NOUN", "PROPN", "VERB"]
+    num_clus = len(final_clusters)
+    for clus in range(num_clus):
+        clus_ids = final_clusters[clus]
+        clus_embeddings = []
+        clus_qs = []
+        for id in clus_ids:
+            q_index = q_ids_list.index(id)
+            clus_embeddings.append(embeddings[q_index])
+            clus_qs.append(qs_list[q_index])
+        clus_centroid = np.mean(clus_embeddings, axis=0)
+        keywords = []
+        for q in clus_qs:
+            doc = nlp(q)
+            for token in doc:
+                if token.pos_ in parts_of_speech and token.is_stop is False and token.is_punct is False:
+                    keywords.append(token.lemma_)
+        #print(keywords)
+        key_embeds = embed(keywords)
+        vec_to_centroid = clus_centroid - key_embeds
+        distances = np.linalg.norm(vec_to_centroid, axis=1)
+        minIndex = np.argmin(distances)
+        print(clus_qs)
+        print(keywords[minIndex])
+        distances = np.delete(distances, minIndex)
+        newMinIndex = np.argmin(distances)
+        print(keywords[newMinIndex])
+
+        #print(clus_centroid)
+
+def return_cluster_labels3(embeddings, qs_list,q_ids_list,final_clusters): #Uses Noun Chunks
+    parts_of_speech = ["NOUN", "PROPN", "VERB"]
+    num_clus = len(final_clusters)
+    for clus in range(num_clus):
+        clus_ids = final_clusters[clus]
+        clus_embeddings = []
+        clus_qs = []
+        for id in clus_ids:
+            q_index = q_ids_list.index(id)
+            clus_embeddings.append(embeddings[q_index])
+            clus_qs.append(qs_list[q_index])
+        clus_centroid = np.mean(clus_embeddings, axis=0)
+        keywords = []
+        for q in clus_qs:
+            doc = nlp(q)
+            for chunk in doc.noun_chunks:
+                #if token.pos_ in parts_of_speech and token.is_stop is False and token.is_punct is False:
+                keywords.append(chunk.text)
+        #print(keywords)
+        keywords = list(set(keywords))
+        #print(keywords)
+        key_embeds = embed(keywords)
+        vec_to_centroid = clus_centroid - key_embeds
+        distances = np.linalg.norm(vec_to_centroid, axis=1)
+        minIndex = np.argmin(distances)
+        print(clus_qs)
+        print(keywords[minIndex])
+        distances = np.delete(distances, minIndex)
+        newMinIndex = np.argmin(distances)
+        print(keywords[newMinIndex])
+
+
+def return_cluster_labels4(embeddings, qs_list,q_ids_list,final_clusters, phrase_len): #Uses Keywords from n-grams
+    parts_of_speech = ["NOUN", "PROPN", "VERB", "ADJ"]
+    num_clus = len(final_clusters)
+    for clus in range(num_clus):
+        clus_ids = final_clusters[clus]
+        clus_embeddings = []
+        clus_qs = []
+        for id in clus_ids:
+            q_index = q_ids_list.index(id)
+            clus_embeddings.append(embeddings[q_index])
+            clus_qs.append(qs_list[q_index])
+        clus_centroid = np.mean(clus_embeddings, axis=0)
+        keywords = []
+        for q in clus_qs:
+            #want to embed 4 word (or whole) phrases
+            q_list = q.split()
+            q_len = len(q_list)
+            if(q_len >=phrase_len):
+                for i in range(len(q_list)-phrase_len):
+                    phrase = ' '.join(q_list[i:phrase_len+i])
+                    keywords.append(phrase)
+            else:
+                keywords.append(q)
+        #print(keywords)
+        keywords = list(set(keywords))
+        #print(keywords)
+        key_embeds = embed(keywords)
+        vec_to_centroid = clus_centroid - key_embeds
+        distances = np.linalg.norm(vec_to_centroid, axis=1)
+        minIndex = np.argmin(distances)
+        print(clus_qs)
+        labels = []
+        phrase_1 = nlp(keywords[minIndex])
+        for token in phrase_1:
+            if token.pos_ in parts_of_speech and token.is_stop is False and token.is_punct is False:
+                if(token.lemma_ not in labels):
+                    labels.append(token.lemma_)
+        
+        distances = np.delete(distances, minIndex)
+        newMinIndex = np.argmin(distances)
+        phrase_2 = nlp(keywords[newMinIndex])
+        for token in phrase_2:
+            if token.pos_ in parts_of_speech and token.is_stop is False and token.is_punct is False:
+                if(token.lemma_ not in labels):
+                    labels.append(token.lemma_)
+        print(list(set(labels)))
+
+def return_cluster_labels5(embeddings, qs_list,q_ids_list,final_clusters, phrase_len): #Uses n-grams + Keywords from them
+    parts_of_speech = ["NOUN", "PROPN", "VERB", "ADJ"]
+    num_clus = len(final_clusters)
+    for clus in range(num_clus):
+        clus_ids = final_clusters[clus]
+        clus_embeddings = []
+        clus_qs = []
+        for id in clus_ids:
+            q_index = q_ids_list.index(id)
+            clus_embeddings.append(embeddings[q_index])
+            clus_qs.append(qs_list[q_index])
+        clus_centroid = np.mean(clus_embeddings, axis=0)
+        keywords = []
+        for q in clus_qs:
+            #want to embed 4 word (or whole) phrases
+            q_list = q.split()
+            q_len = len(q_list)
+            if(q_len >=phrase_len):
+                for i in range(len(q_list)-phrase_len):
+                    phrase = ' '.join(q_list[i:phrase_len+i])
+                    keywords.append(phrase)
+            else:
+                keywords.append(q)
+        #print(keywords)
+        keywords = list(set(keywords))
+        #print(keywords)
+        key_embeds = embed(keywords)
+        vec_to_centroid = clus_centroid - key_embeds
+        distances = np.linalg.norm(vec_to_centroid, axis=1)
+        minIndex = np.argmin(distances)
+        print(clus_qs)
+        len_clus = len(clus_qs)
+        if(len_clus < 6):
+            labels = []
+            phrase_1 = nlp(keywords[minIndex])
+            for token in phrase_1:
+                if token.pos_ in parts_of_speech and token.is_stop is False and token.is_punct is False:
+                    if(token.lemma_ not in labels):
+                        labels.append(token.lemma_)
+            
+            distances = np.delete(distances, minIndex)
+            newMinIndex = np.argmin(distances)
+            phrase_2 = nlp(keywords[newMinIndex])
+            for token in phrase_2:
+                if token.pos_ in parts_of_speech and token.is_stop is False and token.is_punct is False:
+                    if(token.lemma_ not in labels):
+                        labels.append(token.lemma_)
+            print(list(set(labels)))
+        else:
+            phrase_1 = keywords[minIndex]
+            print(phrase_1)
+            distances = np.delete(distances, minIndex)
+            newMinIndex = np.argmin(distances)
+            phrase_2 = keywords[newMinIndex]
+            print(phrase_2)
+            
+
+def return_cluster_labels_NMI(embeddings, qs_list,q_ids_list,final_clusters): #Uses Normalised Mututal Information
+        parts_of_speech = ["NOUN", "PROPN", "VERB"]
+        total_num_qs = len(qs_list)
+        #print(qs_list)
+        #print(len(qs_list))
+        num_clus = len(final_clusters)
+        global_keywords = []
+        new_clus_list = []
+        new_qs_list = []
+        for clus in range(num_clus):
+            clus_ids = final_clusters[clus]
+            clus_embeddings = []
+            clus_qs = []
+            new_clus_qs = []
+            for id in clus_ids:
+                q_index = q_ids_list.index(id)
+                clus_embeddings.append(embeddings[q_index])
+                clus_qs.append(qs_list[q_index])
+            #clus_centroid = np.mean(clus_embeddings, axis=0)
+            keywords = []
+            for q in clus_qs:
+                doc = nlp(q)
+                new_q=[] #Now questions are all lemma words
+                for token in doc:
+                    if token.pos_ in parts_of_speech and token.is_stop is False and token.is_punct is False:
+                        keywords.append(token.lemma_)
+                        new_q.append(token.lemma_)
+                new_q = [str(x).upper() for x in new_q]
+                new_qs_list.append(new_q)
+                new_clus_qs.append(new_q) #Adding new question to new formed cluster of new ques
+            keywords = list(set(keywords))
+            global_keywords.extend(keywords)
+            new_clus_list.append(new_clus_qs)
+        global_keywords = list(set([x.upper() for x in global_keywords]))
+        #print(global_keywords)
+        #print(new_clus_list)
+        #print('Qs list:------------')
+        #print(new_qs_list)
+        #For each term and each cluster, get frequencies over all qs present in our corpus
+        
+
+        for clus in range(num_clus):
+            NMI = []
+            clus_qs = new_clus_list[clus]
+            clus_ids = final_clusters[clus]
+            clus_embeddings = []
+            og_clus_qs = []
+            for id in clus_ids:
+                q_index = q_ids_list.index(id)
+                clus_embeddings.append(embeddings[q_index])
+                og_clus_qs.append(qs_list[q_index])
+            
+            #clus_qs list of qs in cluster
+            for term in global_keywords: #In cluster, calculating I(term,cluster)
+                P_t0=0.0
+                P_t1=0.0
+                P_u0=0.0
+                P_u1=0.0
+                P_t0_u0=0.0
+                P_t0_u1=0.0
+                P_t1_u0=0.0
+                P_t1_u1=0.0
+                for ques in new_qs_list: #All questions in Corpus
+                    if term not in ques:
+                        P_t0+=1
+                        if(ques not in clus_qs):
+                            P_u0+=1
+                            P_t0_u0+=1
+                        else:
+                            P_u1+=1
+                            P_t0_u1+=1
+                    else:
+                        P_t1+=1
+                        if(ques not in clus_qs):
+                            P_u0+=1
+                            P_t1_u0+=1
+                        else:
+                            P_u1+=1
+                            P_t1_u1+=1
+                I_t_c = 0.0
+                P_t0/=total_num_qs
+                P_t1/=total_num_qs
+                P_u0/=total_num_qs
+                P_u1/=total_num_qs
+                P_t0_u0/=total_num_qs
+                P_t0_u1/=total_num_qs
+                P_t1_u0/=total_num_qs
+                #print(P_t1_u1)
+                P_t1_u1/=total_num_qs
+                combined_P = {'00':P_t0_u0,'01':P_t0_u1,'10':P_t1_u0,'11':P_t1_u1}
+                single_T = {'0':P_t0,'1':P_t1}
+                single_U = {'0':P_u0,'1':P_u1}
+                #print(combined_P['11'])
+                #print(combined_P)
+                #print(single_U)
+                #print(single_T) 
+                for i in range(2):
+                    for j in range(2):
+                        #print(i,j)
+                        if(combined_P[str(i)+str(j)]!=0):
+                            I_t_c+= (combined_P[str(i)+str(j)] * math.log((combined_P[str(i)+str(j)] / (single_T[str(i)] * single_U[str(j)])),2))
+                        else:
+                            I_t_c+=0
+                        #print(I_t_c)
+
+                H_t=0.0
+                H_c=0.0
+                for i in range(2):
+                    if(single_T[str(i)]!=0):
+                        H_t+=single_T[str(i)]* math.log(single_T[str(i)],2)
+                    else:
+                        H_t+=0
+                    if(single_U[str(i)]!=0):
+                        H_c+=single_U[str(i)]* math.log(single_U[str(i)],2)
+                    else:
+                        H_c+=0
+                H_t*=-1
+                H_c*=-1
+                NMI_i_t_c = 2*(I_t_c/(H_c + H_t))
+                NMI.append([term, NMI_i_t_c])
+            NMI.sort(key = lambda x: x[1], reverse=True)
+            print(og_clus_qs)
+            print(NMI[:5])
+
+                
+
+            
+
+        """
+            key_embeds = embed(keywords)
+            vec_to_centroid = clus_centroid - key_embeds
+            distances = np.linalg.norm(vec_to_centroid, axis=1)
+            minIndex = np.argmin(distances)
+            print(clus_qs)
+            print(keywords[minIndex])
+            distances = np.delete(distances, minIndex)
+            newMinIndex = np.argmin(distances)
+            print(keywords[newMinIndex])
+        """
+
+#Command to use with from terminal
+#curl --header "Content-Type:application/json" --request POST --data "@C:\Users\arazs\Documents\Beagle Learning Intern\test_data4.json" http://localhost:5000/usecondition/

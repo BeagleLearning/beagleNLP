@@ -8,7 +8,7 @@ import numpy as np
 from build_tag_cluster import buildTagCluster
 from beagleError import BeagleError
 import errors
-from use_cluster import get_data_embeddings, best_score_HAC_sparse, HAC_with_Sparsification, get_best_HAC_normal, return_cluster_dict
+from use_cluster import get_data_embeddings, best_score_HAC_sparse, HAC_with_Sparsification, get_best_HAC_normal, return_cluster_dict, return_cluster_labels_NMI
 import time
 from functools import wraps
 
@@ -213,7 +213,12 @@ def handleUSECluster3():
     else:
         
         best_scores = list(map(int,get_best_HAC_normal(embeddings, data_used_for_demo)[1]))
-        return jsonify(return_cluster_dict(best_scores,q_ids_list))
+        print(q_ids_list)
+        print(best_scores)
+        final_list = return_cluster_dict(best_scores,q_ids_list)
+        print(final_list)
+        return_cluster_labels_NMI(embeddings, data_used_for_demo, q_ids_list, final_list)
+        return jsonify(final_list)
     
         
 
