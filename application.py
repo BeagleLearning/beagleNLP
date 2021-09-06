@@ -8,7 +8,7 @@ import numpy as np
 from build_tag_cluster import buildTagCluster
 from beagleError import BeagleError
 import errors
-from use_cluster import get_data_embeddings, best_score_HAC_sparse, HAC_with_Sparsification, get_best_HAC_normal, return_cluster_dict
+from use_cluster import get_data_embeddings, best_score_HAC_sparse, HAC_with_Sparsification, get_best_HAC_normal, return_cluster_dict,return_cluster_labels_NMI_nGrams_Centroid
 import time
 from functools import wraps
 
@@ -207,24 +207,17 @@ def handleUSECluster3():
     if(len(data_used_for_demo)<50):
         
         best_scores = list(map(int,best_score_HAC_sparse(embeddings, data_used_for_demo, 2)[1]))
-<<<<<<< Updated upstream
-        return jsonify(return_cluster_dict(best_scores,q_ids_list))
-=======
         final_list = return_cluster_dict(best_scores,q_ids_list)
         return_cluster_labels_NMI_nGrams_Centroid(embeddings, data_used_for_demo, q_ids_list, final_list)
         for cluster_id in final_list:
             q_ids = final_list[cluster_id]
             final_list[cluster_id] = {"q_ids":q_ids, "label":" "}
         return jsonify(final_list)
->>>>>>> Stashed changes
     
         
     else:
         
         best_scores = list(map(int,get_best_HAC_normal(embeddings, data_used_for_demo)[1]))
-<<<<<<< Updated upstream
-        return jsonify(return_cluster_dict(best_scores,q_ids_list))
-=======
         print(q_ids_list)
         print(best_scores)
         final_list = return_cluster_dict(best_scores,q_ids_list)
@@ -234,7 +227,6 @@ def handleUSECluster3():
             q_ids = final_list[cluster_id]
             final_list[cluster_id] = {"q_ids":q_ids, "label":" "}
         return jsonify(final_list)
->>>>>>> Stashed changes
     
         
 
