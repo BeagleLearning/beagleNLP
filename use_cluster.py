@@ -3,23 +3,23 @@ This is Araz's code to cluster questions from a particular class.
 This has 2 key aspects:
 1. Using Universal Sentence Encoder for encoding the questions
 2. Using 2 different types of Hierarchical Agglomerative Clustering
-
 Read about USE here:https://towardsdatascience.com/use-cases-of-googles-universal-sentence-encoder-in-production-dd5aaab4fc15
 Read about HAC here: https://en.wikipedia.org/wiki/Hierarchical_clustering
-
 The code is well documented, and divided into 4 main functions, and other sub-functions called by them.
-
 For more details on this approach, you can contact Araz at: arazsharma1103@gmail.com
 """
 
 #Importing required Libraries
 
+from numpy.testing._private.utils import assert_equal
+import spacy
 import tensorflow as tf
 import tensorflow_hub as hub
 import numpy as np
+import math
 import os
 import re
-from scipy.cluster.hierarchy import dendrogram, linkage, cut_tree
+from scipy.cluster.hierarchy import centroid, dendrogram, linkage, cut_tree
 from sklearn import metrics
 import random
 from sklearn.cluster import AgglomerativeClustering
@@ -32,8 +32,9 @@ import logging
 #Loading the USE Model with Tensorflow Hub
 
 try:
-    os.environ['TFHUB_CACHE_DIR'] = "C:/Users/arazs/Documents/GitHub/beagleNLP/test_hub"
+    #os.environ['TFHUB_CACHE_DIR'] = "C:/Users/arazs/Documents/GitHub/beagleNLP/test_hub"
     embed = hub.load("https://tfhub.dev/google/universal-sentence-encoder-large/5")
+    nlp = spacy.load("en_core_web_lg")
     logging.debug('Model Loaded')
 except:
     raise BeagleError(errors.USE_LOAD_ERROR) #If model not loaded
@@ -48,7 +49,6 @@ MAX_CLUSTER = 11
 
 """
 > The objective of this function is to convert the data recieved by the server into embeddings with the USE Model
-
 :The data is recieved in form of a list of dictionaries with keys: Question, Question_Id, Course_Id
 :The questions are stored seperately, and embedded with USE
 :The function handles errors for missing/wrong keys & invalid datatypes for the entries
@@ -79,19 +79,14 @@ def get_data_embeddings(data):
 """
 > The objective of this function is to find the row & column in matrix
 given the size of matrix & the position in upper half of the matrix (not considering diagnal)
-
 For example consider a 3x3 matrix
-
 1 2 3
 4 5 6
 7 8 9
-
 Upper half has numbers 2 3 6 @ positions 1 2 3
 So for 6 we want to output: row, column = 2,3 (which would be 1,2 as indexing starts from 0)
-
 The logic for finding this is as follows:
 1. The upper half of a matrix consists of numbers in each row as positions-
-
 1 2.....(n-1)   n-1 numbers
   n.........    n-2 numbers
   (2n-2)....    n-3 numbers
@@ -99,7 +94,6 @@ The logic for finding this is as follows:
        ......
          ....
         n(n-1)/2  1 number
-
 2. For the position given, we can keep subtracting n-1, n-2... till the value becomes <=0
 3. At that point we will know the row this position belongs to
 4. For column, we can add the row number to the previous value of position before it became <=0
@@ -130,8 +124,6 @@ def get_ind(n, nmb): #n is size of matrix (nxn), nmb is the number at the top ha
 
 """
 > The objective of this function is to get clusters with input as a similarity matrix
-
-
 :The inputs are number of clusters to return, the questions to cluster & similarity matrix
 :The HAC is done with Scipy library
 """
@@ -161,11 +153,9 @@ def get_clusters_from_sim_matrix(n_clus, questions_list, X):
 """
 > The objective of this function is to cluster questions using Hierarichal Agglomerative Clustering 
 with Sparsification. 
-
 :HAC with sparsification is a novel approach, which modifies the input similarity matrix before feeding it to the HAC Algorithm
 :To read about this approach in detail, see - 
 https://www.researchgate.net/publication/328034827_Improving_Short_Text_Clustering_by_Similarity_Matrix_Sparsification
-
 :The inputs for the function are number of clusters to form, data embeddings, list of questions & type of sparsification to use (1 or 2)
 :The High level function overview is as follows-
 1. Create a similarity matrix from the data embeddings
@@ -268,7 +258,6 @@ def HAC_with_Sparsification(n_clus, embeddings, questions_list, type_n = 1, retu
 """
 > The objective of this function is to evaluate the best number of clusters & call the HAC with sparsification
 function to return those clusters
-
 :The inputs required are the embeddings, questions to cluster & type of sparsification (1 or 2)
 :Type 1 uses the normal threshold
 :Type 2 uses 2*normal threshold
@@ -303,7 +292,6 @@ def best_score_HAC_sparse(data_embeddings, questions_list, type_n = 1):
 
 """
 > The objective of this function is to evaluate the best number of clusters & call the Standard HAC function to return those clusters
-
 :The inputs required are the embeddings & questions to cluster
 :Uses Agglomerative Clustering from sklearn
 :The number of clusters tested are from 4 till 10
@@ -352,7 +340,6 @@ def get_best_HAC_normal(data_embeddings, questions_list):
 
 """
 > The objective of this function is to return clusters in format of {cluster_id: [q_ids in cluster]}
-
 :The inputs required are the q_cluster list & question id's list
 :The dictionary is formed with q_ids fed into each cluster number it is alloted
 """
@@ -366,16 +353,12 @@ def return_cluster_dict(q_cluster, q_ids_list):
         else:
             final_clusters[q_cluster[indx]].append(q_ids_list[indx])
 
-<<<<<<< Updated upstream
-    return final_clusters
-=======
     return final_clusters
 
 
 """
 > The objective of this function is to generate labels for each cluster based on a custom score developed by Araz, 
 using Normalised Mutual Information (NMI) and Distance from the Cluster Centroid 
-
 :The inputs required are the embeddings (generated previously from cluster functions), list of questions, question ids & clusters generated 
 : Read about NMI here: https://arxiv.org/pdf/1702.08199.pdf
 : For how Araz developed the custom score/metric, refer here: 
@@ -394,7 +377,6 @@ def return_cluster_labels_NMI_nGrams_Centroid(embeddings,qs_list,q_ids_list,clus
     
 """
 > The objective of this function is to generate:
-
 1. Modified questions formed by joining lemmatized keywords based on number of grams to consider (1 or 2)
     >lemmatized_qs_list
 2. Clusters from these modified questions. 
@@ -405,8 +387,6 @@ def return_cluster_labels_NMI_nGrams_Centroid(embeddings,qs_list,q_ids_list,clus
     >centroids
 5. Embeddings for all the global keywords
     >vecs
-
-
 :The inputs required are taken from the inputs of the parent function and an additional 'phrase_len' to tell number of grams  
 """
 
@@ -459,7 +439,6 @@ def Generate_Modified_Qs_Data(clusters, q_ids_list, embeddings, qs_list, phrase_
 
 """
 > The objective of this function is to:
-
 1. Calculate the distances for each keyword from the centroid, to be used for scoring
     
 2. Call the custom metric function to calculate scores for labels 
@@ -513,7 +492,6 @@ def Calculate_Label_Score(modified_clus_list, clusters, centroids, vecs, q_ids_l
 
 """
 > The objective of this function is to:
-
 1. Calculate the Normalised Mutual Information (NMI) score for a term & a cluster
     
 2. Append all scores in both NMI & Vanilla NMI Lists for final calculation & comparision
@@ -589,4 +567,3 @@ def NMI_Metric(global_keywords, lemmatized_qs_list, clus_qs, NMI, vanilla_NMI):
         
 #Command to use with from terminal
 #curl --header "Content-Type:application/json" --request POST --data "@C:\Users\arazs\Documents\Beagle Learning Intern\test_data4.json" http://localhost:5000/usecondition/
->>>>>>> Stashed changes
