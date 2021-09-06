@@ -367,14 +367,139 @@ using Normalised Mutual Information (NMI) and Distance from the Cluster Centroid
 def return_cluster_labels_NMI_nGrams_Centroid(embeddings,qs_list,q_ids_list,clusters): 
     
     modified_clus_list, centroids, vecs, global_keywords, lemmatized_qs_list = Generate_Modified_Qs_Data(clusters, q_ids_list, embeddings, qs_list, 1)
-    Calculate_Label_Score(modified_clus_list, clusters, centroids, vecs, q_ids_list, qs_list, global_keywords, lemmatized_qs_list)
+    scores_1gram = Calculate_Label_Score(modified_clus_list, clusters, centroids, vecs, q_ids_list, qs_list, global_keywords, lemmatized_qs_list)
     
     modified_clus_list, centroids, vecs, global_keywords, lemmatized_qs_list = Generate_Modified_Qs_Data(clusters, q_ids_list, embeddings, qs_list, 2)
-    Calculate_Label_Score(modified_clus_list, clusters, centroids, vecs, q_ids_list, qs_list, global_keywords, lemmatized_qs_list)
+    scores_2gram = Calculate_Label_Score(modified_clus_list, clusters, centroids, vecs, q_ids_list, qs_list, global_keywords, lemmatized_qs_list)
     
-    modified_clus_list, centroids, vecs, global_keywords, lemmatized_qs_list = Generate_Modified_Qs_Data(clusters, q_ids_list, embeddings, qs_list, 3)
-    Calculate_Label_Score(modified_clus_list, clusters, centroids, vecs, q_ids_list, qs_list, global_keywords, lemmatized_qs_list)
-    
+    combined_scores = []
+    for score_1gram, score_2gram in zip(scores_1gram, scores_2gram):
+        score_1gram.extend(score_2gram)
+        score_1gram.sort(key = lambda x: x[1],reverse=True)
+        combined_scores.append(score_1gram)
+
+    final_labels = return_best_label_combination(combined_scores)
+
+    for label, clus_score in zip(final_labels, combined_scores):
+        print(clus_score[:5])
+        print(label)
+        print("-------------")
+    #modified_clus_list, centroids, vecs, global_keywords, lemmatized_qs_list = Generate_Modified_Qs_Data(clusters, q_ids_list, embeddings, qs_list, 3)
+    #Calculate_Label_Score(modified_clus_list, clusters, centroids, vecs, q_ids_list, qs_list, global_keywords, lemmatized_qs_list)
+
+
+def get_label_type(label):
+    if ' ' in label:
+        return 2 #2gram
+    else:
+        return 1 #1gram
+
+def return_best_label_combination(label_scores):
+    final_labels = []
+    for cluster_labels in label_scores:
+        label_1 = cluster_labels[0][0]
+        label_2 = cluster_labels[1][0]
+        label_3 = cluster_labels[2][0]
+        label_4 = cluster_labels[3][0]
+
+        label_1_type = get_label_type(label_1)
+        label_2_type = get_label_type(label_2)       
+        label_3_type = get_label_type(label_3)
+        label_4_type = get_label_type(label_4)       
+
+        
+        #CASE I label_1 1 gram label_2 2 gram
+
+        if(label_1_type==1 and label_2_type==2):
+            if(label_1 not in label_2):
+                selected = [label_1, label_2]
+                final_labels.append(selected)
+            else:
+                if(label_3_type==2):
+                    selected = [label_2, label_3]
+                    final_labels.append(selected)
+                else:
+                    if(label_3 not in label_2):
+                        selected = [label_2, label_3]
+                        final_labels.append(selected)
+                    else:
+                        selected = [label_2, label_4]
+                        final_labels.append(selected)
+
+        #CASE II label_1 1 gram label_2 2 gram
+
+        elif(label_1_type==1 and label_2_type==1):
+            if(label_3_type==1):
+                if(label_4_type==1):
+                    selected = [label_1, label_2]
+                    final_labels.append(selected)
+                else:
+                    label_in_word = []
+                    if(label_1 in label_4):
+                        label_in_word.append(label_1)
+                    if(label_2 in label_4):
+                        label_in_word.append(label_2)
+                    if(label_3 in label_4):
+                        label_in_word.append(label_3)
+                    
+                    if(len(label_in_word)==0):
+                        selected = [label_1, label_2]
+                        final_labels.append(selected)
+                    else:
+                        selected = [label_1, label_2, label_3, label_4]
+                        for label in label_in_word:
+                            if(label in selected):
+                                selected.remove(label)
+                        final_labels.append(selected)
+            else:
+                label_in_word = []
+                if(label_1 in label_3):
+                    label_in_word.append(label_1)
+                if(label_2 in label_3):
+                    label_in_word.append(label_2)
+
+                if(len(label_in_word)==0):
+                    selected = [label_1, label_2]
+                    final_labels.append(selected)
+                else:
+                    if(len(label_in_word)==1):
+                        selected = [label_1, label_2, label_3]
+                        for label in label_in_word:
+                            selected.remove(label)
+                        final_labels.append(selected)
+                    else:
+                        selected = [label_3, label_4]
+                        final_labels.append(selected)
+
+        #CASE III label_1 2 gram label_2 1 gram
+
+        elif(label_1_type==2 and label_2_type==1):
+            if(label_2 not in label_1):
+                selected = [label_1, label_2]
+                final_labels.append(selected)
+            else:
+                if(label_3_type==2):
+                    selected = [label_1, label_3]
+                    final_labels.append(selected)
+                else:
+                    if(label_3 not in label_1):
+                        selected = [label_1, label_3]
+                        final_labels.append(selected)
+                    else:
+                        selected = [label_1, label_4]
+                        final_labels.append(selected)
+
+        #CASE IV label_1 2 gram label_2 2 gram
+
+        else:
+            selected = [label_1, label_2]
+            final_labels.append(selected)
+
+    return final_labels
+
+
+
+
 """
 > The objective of this function is to generate:
 1. Modified questions formed by joining lemmatized keywords based on number of grams to consider (1 or 2)
@@ -457,6 +582,7 @@ clusters, questions & questions id lists for output referring with cluster quest
 def Calculate_Label_Score(modified_clus_list, clusters, centroids, vecs, q_ids_list, qs_list, global_keywords, lemmatized_qs_list):
     #For each term and each cluster, get frequencies over all qs present in our corpus (NMI)
     num_clus = len(modified_clus_list)
+    all_cluster_scores = []
     for clus in range(num_clus):
         NMI = [] #NMI Scores from custom metric (with Centroid Factor)
         vanilla_NMI=[] #Vanilla NMI Scores
@@ -488,6 +614,8 @@ def Calculate_Label_Score(modified_clus_list, clusters, centroids, vecs, q_ids_l
         print("Old NMI Score based Labels:",vanilla_NMI[:5])
         print("New Score based Labels:",new_score[:5])
         print("Cluster Qs:",og_clus_qs)
+        all_cluster_scores.append(new_score[:5])
+    return all_cluster_scores
 
 
 """
