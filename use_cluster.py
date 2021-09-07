@@ -384,6 +384,8 @@ def return_cluster_labels_NMI_nGrams_Centroid(embeddings,qs_list,q_ids_list,clus
         print(clus_score[:5])
         print(label)
         print("-------------")
+    
+    return final_labels
     #modified_clus_list, centroids, vecs, global_keywords, lemmatized_qs_list = Generate_Modified_Qs_Data(clusters, q_ids_list, embeddings, qs_list, 3)
     #Calculate_Label_Score(modified_clus_list, clusters, centroids, vecs, q_ids_list, qs_list, global_keywords, lemmatized_qs_list)
 
