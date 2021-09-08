@@ -386,9 +386,7 @@ def return_cluster_labels_NMI_nGrams_Centroid(embeddings,qs_list,q_ids_list,clus
         print("-------------")
     
     return final_labels
-    #modified_clus_list, centroids, vecs, global_keywords, lemmatized_qs_list = Generate_Modified_Qs_Data(clusters, q_ids_list, embeddings, qs_list, 3)
-    #Calculate_Label_Score(modified_clus_list, clusters, centroids, vecs, q_ids_list, qs_list, global_keywords, lemmatized_qs_list)
-
+    
 
 def get_label_type(label):
     if ' ' in label:
@@ -516,7 +514,11 @@ def return_best_label_combination(label_scores):
     >vecs
 :The inputs required are taken from the inputs of the parent function and an additional 'phrase_len' to tell number of grams  
 """
-
+# Inputs: Each Q:
+# Q.id
+# Q.embedding
+# Q.cluster_id
+# Q.token_list (List of tokens by nlp)
 
 def Generate_Modified_Qs_Data(clusters, q_ids_list, embeddings, qs_list, phrase_len):
 
