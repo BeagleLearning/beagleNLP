@@ -20,6 +20,7 @@ import math
 import os
 import re
 from scipy.cluster.hierarchy import centroid, dendrogram, linkage, cut_tree
+from labelling_cluster_corpus import LabellingClusterCorpus
 from sklearn import metrics
 import random
 from sklearn.cluster import AgglomerativeClustering
@@ -365,6 +366,13 @@ using Normalised Mutual Information (NMI) and Distance from the Cluster Centroid
 """
 
 def return_cluster_labels_NMI_nGrams_Centroid(embeddings,qs_list,q_ids_list,clusters): 
+
+    labelling_corpus = LabellingClusterCorpus(qs_list, nlp)
+    labelling_corpus.process_docs(embeddings, q_ids_list, clusters)
+    print(labelling_corpus.documents[10]._.qid)
+    print(labelling_corpus.documents[10]._.clusterlabel)
+    print(labelling_corpus.documents[10]._.lemma_list)
+    print(labelling_corpus.documents[10]._.cluster_id)
     
     modified_clus_list, centroids, vecs, global_keywords, lemmatized_qs_list = Generate_Modified_Qs_Data(clusters, q_ids_list, embeddings, qs_list, 1)
     scores_1gram = Calculate_Label_Score(modified_clus_list, clusters, centroids, vecs, q_ids_list, qs_list, global_keywords, lemmatized_qs_list)

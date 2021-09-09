@@ -8,7 +8,7 @@ class Corpus:
         self.documents = []
         n_docs = len(self._raw_docs)
         self.distance_matrix = [[1] * n_docs] * n_docs
-        self.process_docs()
+        
 
     def process_docs(self):
         """Processes passed-in documents with passed-in NLP."""
