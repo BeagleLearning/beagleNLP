@@ -205,6 +205,7 @@ def handleUSECluster3():
     
     embeddings, data_used_for_demo, q_ids_list = get_data_embeddings(data)
     print("q_ids_list:",q_ids_list)
+    output = []
     if(len(data_used_for_demo)<50):
         
         best_scores = list(map(int,best_score_HAC_sparse(embeddings, data_used_for_demo, 2)[1]))
@@ -212,9 +213,9 @@ def handleUSECluster3():
         labels = return_cluster_labels_NMI_nGrams_Centroid(embeddings, data_used_for_demo, q_ids_list, final_list)
         for cluster_id in final_list:
             q_ids = final_list[cluster_id]
-            cluster_label = ' - '.join(labels[cluster_id])
-            final_list[cluster_id] = {"q_ids":q_ids, "label":cluster_label}
-        return jsonify(final_list)
+            cluster_label = ' , '.join(labels[cluster_id])
+            output.append({"q_ids":q_ids, "label":cluster_label})
+        return jsonify(output)
     
         
     else:
@@ -224,9 +225,9 @@ def handleUSECluster3():
         labels = return_cluster_labels_NMI_nGrams_Centroid(embeddings, data_used_for_demo, q_ids_list, final_list)
         for cluster_id in final_list:
             q_ids = final_list[cluster_id]
-            cluster_label = ' - '.join(labels[cluster_id])
-            final_list[cluster_id] = {"q_ids":q_ids, "label":cluster_label}
-        return jsonify(final_list)
+            cluster_label = ' , '.join(labels[cluster_id])
+            output.append({"q_ids":q_ids, "label":cluster_label})
+        return jsonify(output)
     
         
 

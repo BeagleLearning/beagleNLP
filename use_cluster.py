@@ -12,6 +12,7 @@ For more details on this approach, you can contact Araz at: arazsharma1103@gmail
 #Importing required Libraries
 
 from numpy.testing._private.utils import assert_equal
+from sklearn import cluster
 import spacy
 import tensorflow as tf
 import tensorflow_hub as hub
@@ -373,12 +374,18 @@ def return_cluster_labels_NMI_nGrams_Centroid(embeddings,qs_list,q_ids_list,clus
     print(labelling_corpus.documents[10]._.clusterlabel)
     print(labelling_corpus.documents[10]._.lemma_list)
     print(labelling_corpus.documents[10]._.cluster_id)
+    print(labelling_corpus.documents[10]._.raw_text)
+    print(labelling_corpus.documents[10]._.embedding)
     
-    modified_clus_list, centroids, vecs, global_keywords, lemmatized_qs_list = Generate_Modified_Qs_Data(clusters, q_ids_list, embeddings, qs_list, 1)
-    scores_1gram = Calculate_Label_Score(modified_clus_list, clusters, centroids, vecs, q_ids_list, qs_list, global_keywords, lemmatized_qs_list)
+    #modified_clus_list, centroids, vecs, global_keywords, lemmatized_qs_list = Generate_Modified_Qs_Data(clusters, q_ids_list, embeddings, qs_list, 1)
+    cluster_objs, vecs, global_keywords, lemmatized_qs_list = New_Generate_Modified_Qs_Data(labelling_corpus.documents, clusters, q_ids_list,1)
+    #scores_1gram = Calculate_Label_Score(modified_clus_list, clusters, centroids, vecs, q_ids_list, qs_list, global_keywords, lemmatized_qs_list)
+    scores_1gram = New_Calculate_Label_Score(cluster_objs, vecs, global_keywords, lemmatized_qs_list)
     
-    modified_clus_list, centroids, vecs, global_keywords, lemmatized_qs_list = Generate_Modified_Qs_Data(clusters, q_ids_list, embeddings, qs_list, 2)
-    scores_2gram = Calculate_Label_Score(modified_clus_list, clusters, centroids, vecs, q_ids_list, qs_list, global_keywords, lemmatized_qs_list)
+    #modified_clus_list, centroids, vecs, global_keywords, lemmatized_qs_list = Generate_Modified_Qs_Data(clusters, q_ids_list, embeddings, qs_list, 2)
+    cluster_objs, vecs, global_keywords, lemmatized_qs_list = New_Generate_Modified_Qs_Data(labelling_corpus.documents, clusters, q_ids_list,2)
+    #scores_2gram = Calculate_Label_Score(modified_clus_list, clusters, centroids, vecs, q_ids_list, qs_list, global_keywords, lemmatized_qs_list)
+    scores_2gram = New_Calculate_Label_Score(cluster_objs, vecs, global_keywords, lemmatized_qs_list)
     
     combined_scores = []
     for score_1gram, score_2gram in zip(scores_1gram, scores_2gram):
@@ -505,6 +512,14 @@ def return_best_label_combination(label_scores):
 
     return final_labels
 
+def generate_ngrams(n, words_list):
+    ngram_list = []
+    for i in range(len(words_list)-n + 1):
+        phrase = ' '.join(words_list[i:i+n])
+        ngram_list.append(phrase)
+    return ngram_list
+
+            
 
 
 
@@ -534,7 +549,7 @@ def Generate_Modified_Qs_Data(clusters, q_ids_list, embeddings, qs_list, phrase_
 
     parts_of_speech = ["NOUN", "PROPN", "VERB", "ADJ"] #Categories of Keywords/Phrases to consider as labels
     global_keywords = [] #List to store all keywords in corpus (each keyword here is a n-gram, where n is determined by phrase_len)
-    modified_clus_list = [] #Stores Clusters with modified Qs
+    modified_clus_list = [] #Stores Clusters with modified Qs #ngrams cluster list / cluster list of ngrams
     lemmatized_qs_list = [] #Stores all Questions in Corpus (Modified by joining Keywords in Lemma form)
     centroids = [] # List to store centroid of each cluster
     num_clus = len(clusters) #Total number of Clusters
@@ -561,10 +576,8 @@ def Generate_Modified_Qs_Data(clusters, q_ids_list, embeddings, qs_list, phrase_
                 if token.pos_ in parts_of_speech and token.is_stop is False and token.is_punct is False:
                     lemma_q.append(token.lemma_)
             lemma_q = [str(x).upper() for x in lemma_q]
-            for i in range(len(lemma_q)-phrase_len + 1):
-                phrase = ' '.join(lemma_q[i:i+phrase_len])
-                phrase_q.append(phrase)
-                keywords.append(phrase)
+            phrase_q = generate_ngrams(phrase_len,lemma_q)
+            keywords.extend(phrase_q)
             lemmatized_qs_list.append(phrase_q)
             modified_clus_qs.append(phrase_q) #Adding modified question to new formed cluster of modified questions
         keywords = list(set(keywords))
@@ -573,6 +586,56 @@ def Generate_Modified_Qs_Data(clusters, q_ids_list, embeddings, qs_list, phrase_
     global_keywords = list(set([x.upper() for x in global_keywords]))
     vecs = embed(global_keywords)
     return modified_clus_list, centroids, vecs, global_keywords, lemmatized_qs_list
+
+
+def New_Generate_Modified_Qs_Data(documents, clusters, q_ids_list, phrase_len):
+    #Defining Lists to store required Qs Data
+    modified_clus_list = [] #Stores Clusters with modified Qs #ngrams cluster list / cluster list of ngrams
+    lemmatized_qs_list = [] #Stores all Questions in Corpus (Modified by joining Keywords in Lemma form)
+    centroids = [] # List to store centroid of each cluster
+    num_clus = len(clusters) #Total number of Clusters
+    cluster_objects = {}
+
+    #Cluster wise data modification and storage
+    for clus in range(num_clus):
+        clus_obj = {"clus_id":clus}
+        clus_q_ids = clusters[clus]
+        clus_embeddings = [] #To store existing embeddings of questions for each cluster
+        modified_clus_qs = [] #To store new (modified) questions for each cluster
+        og_clus_qs = [] #Original Cluster Questions to see for reference with the labels when debugging
+        for id in clus_q_ids:
+            q_index = q_ids_list.index(id)
+            clus_embeddings.append(documents[q_index]._.embedding)
+            lemma_q = documents[q_index]._.lemma_list
+            phrase_q = generate_ngrams(phrase_len,lemma_q)
+            lemmatized_qs_list.append(phrase_q)
+            modified_clus_qs.append(phrase_q) #Adding modified question to new formed cluster of modified questions
+            og_clus_qs.append(documents[q_index]._.raw_text)
+        clus_centroid = np.mean(clus_embeddings, axis=0)
+        centroids.append(clus_centroid)
+        modified_clus_list.append(modified_clus_qs)
+        clus_obj["cluster_q_ids"] = clus_q_ids
+        clus_obj["embeddings"] = clus_embeddings
+        clus_obj["centroid"] = clus_centroid
+        clus_obj["keyword_questions"] = modified_clus_qs
+        clus_obj["original clus qs"] = og_clus_qs
+        cluster_objects[clus] = clus_obj
+
+    global_keywords = Generate_Global_Keywords(documents, phrase_len)
+    vecs = embed(global_keywords)
+    return cluster_objects, vecs, global_keywords, lemmatized_qs_list
+
+def Generate_Global_Keywords(documents, keyword_length):
+    num_docs = len(documents)
+    global_keywords = [] #List to store all keywords in corpus (each keyword here is a n-gram, where n is determined by keyword_length)
+    for i in range(num_docs):
+        lemma_doc = documents[i]._.lemma_list
+        keywords = generate_ngrams(keyword_length, lemma_doc)
+        global_keywords.extend(keywords)
+    global_keywords = list(set([x.upper() for x in global_keywords]))
+    return global_keywords
+
+
 
 """
 > The objective of this function is to:
@@ -610,6 +673,40 @@ def Calculate_Label_Score(modified_clus_list, clusters, centroids, vecs, q_ids_l
         for id in clus_q_ids:
             q_index = q_ids_list.index(id)
             og_clus_qs.append(qs_list[q_index])
+    
+        NMI_Metric(global_keywords, lemmatized_qs_list, modified_clus_qs, NMI, vanilla_NMI)
+
+        vanilla_NMI.sort(key = lambda x: x[1], reverse=True)
+        max_NMI = max(NMI,key=lambda x:x[1])[1]
+        logging.debug("Maximum NMI Score in Cluster:",max_NMI)
+        logging.debug("Length of score list:",len(NMI))
+        assert_equal(len(NMI),len(distances)) #Making sure equal lenghts for math to work out xD
+        new_score = [[x[0],x[1] + (1/d)*gloabl_min_distance*max_NMI*0.5] for x,d in zip(NMI,distances)]
+        new_score.sort(key = lambda x: x[1], reverse=True)
+        logging.debug("Old NMI Score based Labels:",vanilla_NMI[:5])
+        logging.debug("New Score based Labels:",new_score[:5])
+        logging.debug("Cluster Qs:",og_clus_qs)
+        print("Old NMI Score based Labels:",vanilla_NMI[:5])
+        print("New Score based Labels:",new_score[:5])
+        print("Cluster Qs:",og_clus_qs)
+        all_cluster_scores.append(new_score[:5])
+    return all_cluster_scores
+
+def New_Calculate_Label_Score(cluster_objects, vecs, global_keywords, lemmatized_qs_list):
+    #For each term and each cluster, get frequencies over all qs present in our corpus (NMI)
+    num_clus = len(cluster_objects)
+    all_cluster_scores = []
+    for clus in range(num_clus):
+        NMI = [] #NMI Scores from custom metric (with Centroid Factor)
+        vanilla_NMI=[] #Vanilla NMI Scores
+        modified_clus_qs = cluster_objects[clus]["keyword_questions"] #clus_qs list of qs from the modified cluster 
+        og_clus_qs = cluster_objects[clus]["original clus qs"]
+        centroid = cluster_objects[clus]["centroid"]
+        vec_to_centroid = centroid - vecs
+        distances = np.linalg.norm(vec_to_centroid, axis=1)
+        logging.debug("Total number of Keywords:",len(distances))
+        gloabl_min_distance = min(distances)
+        logging.debug("Global Minimum Distance for cluster:",gloabl_min_distance)
     
         NMI_Metric(global_keywords, lemmatized_qs_list, modified_clus_qs, NMI, vanilla_NMI)
 
