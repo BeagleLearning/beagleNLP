@@ -15,7 +15,7 @@ class LabellingClusterCorpus(Corpus):
         for clus_id in clusters:
             for q_id in clusters[clus_id]:
                 q_index = q_ids.index(q_id)
-                processed_doc = self._nlp(self._raw_docs[q_index])
+                processed_doc = self._nlp(self._raw_docs[q_index].upper())
                 processed_doc._.raw_text = self._raw_docs[q_index] #Question
                 processed_doc._.qid = q_id
                 processed_doc._.embedding = embeddings[q_index]
