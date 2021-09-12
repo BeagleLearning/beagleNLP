@@ -372,12 +372,12 @@ def return_cluster_labels_NMI_nGrams_Centroid(embeddings,qs_list,q_ids_list,clus
     labelling_corpus.process_docs(embeddings, q_ids_list, clusters)
     
     
-    cluster_objs, vecs, global_keywords, lemmatized_qs_list = New_Generate_Modified_Qs_Data(labelling_corpus.documents, clusters, q_ids_list,1)
-    scores_1gram = New_Calculate_Label_Score(cluster_objs, vecs, global_keywords, lemmatized_qs_list)
+    cluster_objs, vecs, global_keywords, lemmatized_qs_list = Generate_Modified_Qs_Data(labelling_corpus.documents, clusters, q_ids_list,1)
+    scores_1gram = Calculate_Label_Score(cluster_objs, vecs, global_keywords, lemmatized_qs_list)
     
     
-    cluster_objs, vecs, global_keywords, lemmatized_qs_list = New_Generate_Modified_Qs_Data(labelling_corpus.documents, clusters, q_ids_list,2)
-    scores_2gram = New_Calculate_Label_Score(cluster_objs, vecs, global_keywords, lemmatized_qs_list)
+    cluster_objs, vecs, global_keywords, lemmatized_qs_list = Generate_Modified_Qs_Data(labelling_corpus.documents, clusters, q_ids_list,2)
+    scores_2gram = Calculate_Label_Score(cluster_objs, vecs, global_keywords, lemmatized_qs_list)
     
     combined_scores = []
     for score_1gram, score_2gram in zip(scores_1gram, scores_2gram):
@@ -386,13 +386,18 @@ def return_cluster_labels_NMI_nGrams_Centroid(embeddings,qs_list,q_ids_list,clus
         combined_scores.append(score_1gram)
 
     final_labels = return_best_label_combination(combined_scores)
+    return final_labels
+
+"""
+    >Used to Check Labels Generated from Label Scores
+    >Use this code snippet before returning the labels
 
     for label, clus_score in zip(final_labels, combined_scores):
         print(clus_score[:5])
         print(label)
         print("-------------")
+"""    
     
-    return final_labels
 
 """
 > The objective of this function is to return whether a label is 1 gram or 2 gram:
@@ -412,15 +417,11 @@ def get_label_type(label):
 """
 > The objective of this function is to decide the final labels for clusters:
 1. We will only consider 2 Keywords (1 or 2 grams)
-2. Clusters from these modified questions. 
-    >modified_clus_list
-3. Each lemmatized phrase is added to the global keyword list, which is used for calculation of the NMI score. 
-    >global_keywords
-4. Calculate the centroids for each cluster, from the USE embeddings
-    >centroids
-5. Embeddings for all the global keywords
-    >vecs
-:The inputs required are taken from the inputs of the parent function and an additional 'phrase_len' to tell number of grams  
+2. The algorithm to select these 2 Keywords is basically a set of if-else conditions 
+3. It is broken down into 4 cases, based on if the top 2 labels by score are a particular combination of 1 or 2 grams 
+4. For each case, certain conditions are checked, to return the best set of labels for that cluster
+5. A diagram for this algorithm, created by Araz is found here: 
+:The inputs required are the label scores cluster wise 
 """
 
 
@@ -557,7 +558,7 @@ def generate_ngrams(n, words_list):
 :The inputs required are taken from the inputs of the parent function and an additional 'phrase_len' to tell number of grams  
 """
 
-def New_Generate_Modified_Qs_Data(documents, clusters, q_ids_list, phrase_len):
+def Generate_Modified_Qs_Data(documents, clusters, q_ids_list, phrase_len):
     #Defining Lists to store required Qs Data
     modified_clus_list = [] #Stores Clusters with modified Qs #ngrams cluster list / cluster list of ngrams
     lemmatized_qs_list = [] #Stores all Questions in Corpus (Modified by joining Keywords in Lemma form)
@@ -633,7 +634,7 @@ def Generate_Global_Keywords(documents, keyword_length):
 : The cluster object has attributes: centroid of cluster, raw text questions, lemmatized questions
 """
 
-def New_Calculate_Label_Score(cluster_objects, vecs, global_keywords, lemmatized_qs_list):
+def Calculate_Label_Score(cluster_objects, vecs, global_keywords, lemmatized_qs_list):
     #For each term and each cluster, get frequencies over all qs present in our corpus (NMI)
     num_clus = len(cluster_objects)
     all_cluster_scores = []
@@ -661,9 +662,6 @@ def New_Calculate_Label_Score(cluster_objects, vecs, global_keywords, lemmatized
         logging.debug("Old NMI Score based Labels:",vanilla_NMI[:5])
         logging.debug("New Score based Labels:",new_score[:5])
         logging.debug("Cluster Qs:",og_clus_qs)
-        print("Old NMI Score based Labels:",vanilla_NMI[:5])
-        print("New Score based Labels:",new_score[:5])
-        print("Cluster Qs:",og_clus_qs)
         all_cluster_scores.append(new_score[:5])
     return all_cluster_scores
 
