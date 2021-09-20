@@ -567,9 +567,9 @@ def Generate_Modified_Qs_Data(documents, clusters, q_ids_list, phrase_len):
     cluster_objects = {}
 
     #Cluster wise data modification and storage
-    for clus in range(num_clus):
-        clus_obj = {"clus_id":clus}
-        clus_q_ids = clusters[clus]
+    for cluster_index in range(num_clus):
+        cluster_data = {"clus_id":cluster_index}
+        clus_q_ids = clusters[cluster_index]
         clus_embeddings = [] #To store existing embeddings of questions for each cluster
         modified_clus_qs = [] #To store new (modified) questions for each cluster
         og_clus_qs = [] #Original Cluster Questions to see for reference with the labels when debugging
@@ -585,10 +585,10 @@ def Generate_Modified_Qs_Data(documents, clusters, q_ids_list, phrase_len):
         centroids.append(clus_centroid)
         modified_clus_list.append(modified_clus_qs)
     
-        clus_obj["centroid"] = clus_centroid
-        clus_obj["keyword_questions"] = modified_clus_qs
-        clus_obj["original clus qs"] = og_clus_qs
-        cluster_objects[clus] = clus_obj
+        cluster_data["centroid"] = clus_centroid
+        cluster_data["keyword_questions"] = modified_clus_qs
+        cluster_data["original_clustered_qs"] = og_clus_qs
+        cluster_objects[cluster_index] = cluster_data
     
     global_keywords = Generate_Global_Keywords(documents, phrase_len)
     vecs = embed(list(global_keywords))
@@ -638,11 +638,11 @@ def Calculate_Label_Score(cluster_objects, vecs, global_keywords, lemmatized_qs_
     #For each term and each cluster, get frequencies over all qs present in our corpus (NMI)
     num_clus = len(cluster_objects)
     all_cluster_scores = []
-    for clus in range(num_clus):
+    for cluster_index in range(num_clus):
         NMI = [] #NMI Scores from custom metric (with Centroid Factor)
-        modified_clus_qs = cluster_objects[clus]["keyword_questions"] #clus_qs list of qs from the modified cluster 
-        og_clus_qs = cluster_objects[clus]["original clus qs"]
-        centroid = cluster_objects[clus]["centroid"]
+        modified_clus_qs = cluster_objects[cluster_index]["keyword_questions"] #clus_qs list of qs from the modified cluster 
+        og_clus_qs = cluster_objects[cluster_index]["original_clustered_qs"]
+        centroid = cluster_objects[cluster_index]["centroid"]
         vec_to_centroid = centroid - vecs
         distances = np.linalg.norm(vec_to_centroid, axis=1)
         logging.debug("Total number of Keywords:",len(distances))
