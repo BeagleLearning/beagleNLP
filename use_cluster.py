@@ -680,14 +680,14 @@ and the NMI & Vanilla NMI lists, which are modified at each call of this functio
 def NMI_Metric(global_keywords, lemmatized_qs_list, clus_qs, NMI, vanilla_NMI):
     total_num_qs = len(lemmatized_qs_list) #Total number of Qs
     for term in global_keywords: #In cluster, calculating I(term,cluster)
-        P_t0=0.0
-        P_t1=0.0
-        P_u0=0.0
-        P_u1=0.0
-        P_t0_u0=0.0
-        P_t0_u1=0.0
-        P_t1_u0=0.0
-        P_t1_u1=0.0
+        P_t0 = 0.0
+        P_t1 = 0.0
+        P_u0 = 0.0
+        P_u1 = 0.0
+        P_t0_u0 = 0.0
+        P_t0_u1 = 0.0
+        P_t1_u0 = 0.0
+        P_t1_u1 = 0.0
         for ques in lemmatized_qs_list: #All questions in Corpus
             if term not in ques:
                 P_t0+=1
@@ -714,9 +714,9 @@ def NMI_Metric(global_keywords, lemmatized_qs_list, clus_qs, NMI, vanilla_NMI):
         P_t0_u1/=total_num_qs
         P_t1_u0/=total_num_qs
         P_t1_u1/=total_num_qs
-        combined_P = {'00':P_t0_u0,'01':P_t0_u1,'10':P_t1_u0,'11':P_t1_u1}
-        single_T = {'0':P_t0,'1':P_t1}
-        single_U = {'0':P_u0,'1':P_u1}
+        combined_P = {'00': P_t0_u0 ,'01': P_t0_u1 ,'10': P_t1_u0 ,'11': P_t1_u1}
+        single_T = {'0': P_t0 ,'1': P_t1}
+        single_U = {'0': P_u0 ,'1': P_u1}
         for i in range(2):
             for j in range(2):
                 if(combined_P[str(i)+str(j)]!=0):
@@ -724,8 +724,8 @@ def NMI_Metric(global_keywords, lemmatized_qs_list, clus_qs, NMI, vanilla_NMI):
                 else:
                     I_t_c+=0
 
-        H_t=0.0
-        H_c=0.0
+        H_t = 0.0
+        H_c = 0.0
         for i in range(2):
             if(single_T[str(i)]!=0):
                 H_t+=single_T[str(i)]* math.log(single_T[str(i)],2)
