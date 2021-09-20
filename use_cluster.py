@@ -640,7 +640,6 @@ def Calculate_Label_Score(cluster_objects, vecs, global_keywords, lemmatized_qs_
     all_cluster_scores = []
     for clus in range(num_clus):
         NMI = [] #NMI Scores from custom metric (with Centroid Factor)
-        vanilla_NMI=[] #Vanilla NMI Scores
         modified_clus_qs = cluster_objects[clus]["keyword_questions"] #clus_qs list of qs from the modified cluster 
         og_clus_qs = cluster_objects[clus]["original clus qs"]
         centroid = cluster_objects[clus]["centroid"]
@@ -650,16 +649,14 @@ def Calculate_Label_Score(cluster_objects, vecs, global_keywords, lemmatized_qs_
         gloabl_min_distance = min(distances)
         logging.debug("Global Minimum Distance for cluster:",gloabl_min_distance)
     
-        NMI_Metric(global_keywords, lemmatized_qs_list, modified_clus_qs, NMI, vanilla_NMI)
+        NMI_Metric(global_keywords, lemmatized_qs_list, modified_clus_qs, NMI)
 
-        vanilla_NMI.sort(key = lambda x: x[1], reverse=True)
         max_NMI = max(NMI,key=lambda x:x[1])[1]
         logging.debug("Maximum NMI Score in Cluster:",max_NMI)
         logging.debug("Length of score list:",len(NMI))
         assert_equal(len(NMI),len(distances)) #Making sure equal lenghts for math to work out xD
         new_score = [[x[0],x[1] + (1/d)*gloabl_min_distance*max_NMI*0.5] for x,d in zip(NMI,distances)]
         new_score.sort(key = lambda x: x[1], reverse=True)
-        logging.debug("Old NMI Score based Labels:",vanilla_NMI[:5])
         logging.debug("New Score based Labels:",new_score[:5])
         logging.debug("Cluster Qs:",og_clus_qs)
         all_cluster_scores.append(new_score[:5])
@@ -670,14 +667,14 @@ def Calculate_Label_Score(cluster_objects, vecs, global_keywords, lemmatized_qs_
 > The objective of this function is to:
 1. Calculate the Normalised Mutual Information (NMI) score for a term & a cluster
     
-2. Append all scores in both NMI & Vanilla NMI Lists for final calculation & comparision
+2. Append all scores in NMI List for final calculation & comparision
         
 :The inputs required are the global keywords list, lemmatized question list, list of cluster questions
-and the NMI & Vanilla NMI lists, which are modified at each call of this function  
+and the NMI list, which are modified at each call of this function  
 """
 
 
-def NMI_Metric(global_keywords, lemmatized_qs_list, clus_qs, NMI, vanilla_NMI):
+def NMI_Metric(global_keywords, lemmatized_qs_list, clus_qs, NMI):
     total_num_qs = len(lemmatized_qs_list) #Total number of Qs
     for term in global_keywords: #In cluster, calculating I(term,cluster)
         P_t0 = 0.0
@@ -739,7 +736,7 @@ def NMI_Metric(global_keywords, lemmatized_qs_list, clus_qs, NMI, vanilla_NMI):
         H_c*=-1
         NMI_i_t_c = 2*(I_t_c/(H_c + H_t))
         NMI.append([term, NMI_i_t_c])
-        vanilla_NMI.append([term, NMI_i_t_c])
+        
         
 #Command to use with from terminal
 #curl --header "Content-Type:application/json" --request POST --data "@C:\Users\arazs\Documents\Beagle Learning Intern\test_data4.json" http://localhost:5000/usecondition/
