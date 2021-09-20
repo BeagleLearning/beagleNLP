@@ -536,11 +536,11 @@ def return_best_label_combination(label_scores):
 
 
 def generate_ngrams(n, words_list):
-    ngram_list = []
+    ngram_set = set()
     for i in range(len(words_list)-n + 1):
         phrase = ' '.join(words_list[i:i+n])
-        ngram_list.append(phrase)
-    return ngram_list
+        ngram_set.add(phrase)
+    return ngram_set
 
             
 """
@@ -591,7 +591,7 @@ def Generate_Modified_Qs_Data(documents, clusters, q_ids_list, phrase_len):
         cluster_objects[clus] = clus_obj
     
     global_keywords = Generate_Global_Keywords(documents, phrase_len)
-    vecs = embed(global_keywords)
+    vecs = embed(list(global_keywords))
     return cluster_objects, vecs, global_keywords, lemmatized_qs_list
     
 """
@@ -609,13 +609,13 @@ def Generate_Modified_Qs_Data(documents, clusters, q_ids_list, phrase_len):
 
 def Generate_Global_Keywords(documents, keyword_length):
     num_docs = len(documents)
-    global_keywords = [] #List to store all keywords in corpus (each keyword here is a n-gram, where n is determined by keyword_length)
+    global_keywords = set() #List to store all keywords in corpus (each keyword here is a n-gram, where n is determined by keyword_length)
     for i in range(num_docs):
         logging.debug(documents[i])
         lemma_doc = documents[i]._.lemma_list
         keywords = generate_ngrams(keyword_length, lemma_doc)
-        global_keywords.extend(keywords)
-    global_keywords = list(set([x.upper() for x in global_keywords]))
+        global_keywords.update(keywords)
+    global_keywords = set(x.upper() for x in global_keywords)
     return global_keywords
 
 
