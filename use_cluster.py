@@ -714,13 +714,13 @@ def compute_nmi_metrics(global_keywords, lemmatized_qs_list, clus_qs):
         combined_P = {'00': P_t0_u0 ,'01': P_t0_u1 ,'10': P_t1_u0 ,'11': P_t1_u1}
         single_T = {'0': P_t0 ,'1': P_t1}
         single_U = {'0': P_u0 ,'1': P_u1}
-        for i in range(2):
-            for j in range(2):
-                if(combined_P[str(i)+str(j)]!=0):
-                    I_t_c+= (combined_P[str(i)+str(j)] * math.log((combined_P[str(i)+str(j)] / (single_T[str(i)] * single_U[str(j)])),2))
-                else:
-                    I_t_c+=0
 
+        for _ , (key, value) in enumerate(combined_P.items()):
+            if(value!=0):
+                I_t_c+= (value * math.log((value / (single_T[str(key[0])] * single_U[str(key[1])])),2))
+            else:
+                I_t_c+=0
+                
         H_t = 0.0
         H_c = 0.0
         for i in range(2):
