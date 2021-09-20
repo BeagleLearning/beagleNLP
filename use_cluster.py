@@ -372,11 +372,15 @@ def return_cluster_labels_nmi_ngrams_centroid(embeddings,qs_list,q_ids_list,clus
     labelling_corpus.process_docs(embeddings, q_ids_list, clusters)
     
     
-    cluster_objs, vecs, global_keywords, lemmatized_qs_list = generate_modified_qs_data(labelling_corpus.documents, clusters, q_ids_list,1)
+    cluster_objs, lemmatized_qs_list = generate_modified_qs_data(labelling_corpus.documents, clusters, q_ids_list,1)
+    global_keywords = generate_global_keywords(labelling_corpus.documents, 1)
+    vecs = embed(list(global_keywords))
     scores_1gram = calculate_label_score(cluster_objs, vecs, global_keywords, lemmatized_qs_list)
     
     
-    cluster_objs, vecs, global_keywords, lemmatized_qs_list = generate_modified_qs_data(labelling_corpus.documents, clusters, q_ids_list,2)
+    cluster_objs, lemmatized_qs_list = generate_modified_qs_data(labelling_corpus.documents, clusters, q_ids_list,2)
+    global_keywords = generate_global_keywords(labelling_corpus.documents, 2)
+    vecs = embed(list(global_keywords))
     scores_2gram = calculate_label_score(cluster_objs, vecs, global_keywords, lemmatized_qs_list)
     
     combined_scores = []
@@ -590,9 +594,7 @@ def generate_modified_qs_data(documents, clusters, q_ids_list, phrase_len):
         cluster_data["original_clustered_qs"] = og_clus_qs
         cluster_objects[cluster_index] = cluster_data
     
-    global_keywords = generate_global_keywords(documents, phrase_len)
-    vecs = embed(list(global_keywords))
-    return cluster_objects, vecs, global_keywords, lemmatized_qs_list
+    return cluster_objects, lemmatized_qs_list
     
 """
 > The objective of this function is to:
@@ -720,7 +722,7 @@ def compute_nmi_metrics(global_keywords, lemmatized_qs_list, clus_qs):
                 I_t_c+= (value * math.log((value / (single_T[str(key[0])] * single_U[str(key[1])])),2))
             else:
                 I_t_c+=0
-                
+
         H_t = 0.0
         H_c = 0.0
         for i in range(2):
