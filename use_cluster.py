@@ -639,7 +639,6 @@ def Calculate_Label_Score(cluster_objects, vecs, global_keywords, lemmatized_qs_
     num_clus = len(cluster_objects)
     all_cluster_scores = []
     for cluster_index in range(num_clus):
-        NMI = [] #NMI Scores from custom metric (with Centroid Factor)
         modified_clus_qs = cluster_objects[cluster_index]["keyword_questions"] #clus_qs list of qs from the modified cluster 
         og_clus_qs = cluster_objects[cluster_index]["original_clustered_qs"]
         centroid = cluster_objects[cluster_index]["centroid"]
@@ -649,13 +648,13 @@ def Calculate_Label_Score(cluster_objects, vecs, global_keywords, lemmatized_qs_
         gloabl_min_distance = min(distances)
         logging.debug("Global Minimum Distance for cluster:",gloabl_min_distance)
     
-        NMI_Metric(global_keywords, lemmatized_qs_list, modified_clus_qs, NMI)
+        NMI_scores = Compute_NMI_Metrics(global_keywords, lemmatized_qs_list, modified_clus_qs)
 
-        max_NMI = max(NMI,key=lambda x:x[1])[1]
+        max_NMI = max(NMI_scores,key=lambda x:x[1])[1]
         logging.debug("Maximum NMI Score in Cluster:",max_NMI)
-        logging.debug("Length of score list:",len(NMI))
-        assert_equal(len(NMI),len(distances)) #Making sure equal lenghts for math to work out xD
-        new_score = [[x[0],x[1] + (1/d)*gloabl_min_distance*max_NMI*0.5] for x,d in zip(NMI,distances)]
+        logging.debug("Length of score list:",len(NMI_scores))
+        assert_equal(len(NMI_scores),len(distances)) #Making sure equal lenghts for math to work out xD
+        new_score = [[x[0],x[1] + (1/d)*gloabl_min_distance*max_NMI*0.5] for x,d in zip(NMI_scores,distances)]
         new_score.sort(key = lambda x: x[1], reverse=True)
         logging.debug("New Score based Labels:",new_score[:5])
         logging.debug("Cluster Qs:",og_clus_qs)
@@ -674,7 +673,8 @@ and the NMI list, which are modified at each call of this function
 """
 
 
-def NMI_Metric(global_keywords, lemmatized_qs_list, clus_qs, NMI):
+def Compute_NMI_Metrics(global_keywords, lemmatized_qs_list, clus_qs):
+    NMI_scores = []
     total_num_qs = len(lemmatized_qs_list) #Total number of Qs
     for term in global_keywords: #In cluster, calculating I(term,cluster)
         P_t0 = 0.0
@@ -735,7 +735,8 @@ def NMI_Metric(global_keywords, lemmatized_qs_list, clus_qs, NMI):
         H_t*=-1
         H_c*=-1
         NMI_i_t_c = 2*(I_t_c/(H_c + H_t))
-        NMI.append([term, NMI_i_t_c])
+        NMI_scores.append([term, NMI_i_t_c])
+    return NMI_scores
         
         
 #Command to use with from terminal
