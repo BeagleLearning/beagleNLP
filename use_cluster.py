@@ -366,18 +366,18 @@ using Normalised Mutual Information (NMI) and Distance from the Cluster Centroid
 : For how Araz developed the custom score/metric, refer here: 
 """
 
-def return_cluster_labels_NMI_nGrams_Centroid(embeddings,qs_list,q_ids_list,clusters): 
+def return_cluster_labels_nmi_ngrams_centroid(embeddings,qs_list,q_ids_list,clusters): 
 
     labelling_corpus = LabellingClusterCorpus(qs_list, nlp)
     labelling_corpus.process_docs(embeddings, q_ids_list, clusters)
     
     
-    cluster_objs, vecs, global_keywords, lemmatized_qs_list = Generate_Modified_Qs_Data(labelling_corpus.documents, clusters, q_ids_list,1)
-    scores_1gram = Calculate_Label_Score(cluster_objs, vecs, global_keywords, lemmatized_qs_list)
+    cluster_objs, vecs, global_keywords, lemmatized_qs_list = generate_modified_qs_data(labelling_corpus.documents, clusters, q_ids_list,1)
+    scores_1gram = calculate_label_score(cluster_objs, vecs, global_keywords, lemmatized_qs_list)
     
     
-    cluster_objs, vecs, global_keywords, lemmatized_qs_list = Generate_Modified_Qs_Data(labelling_corpus.documents, clusters, q_ids_list,2)
-    scores_2gram = Calculate_Label_Score(cluster_objs, vecs, global_keywords, lemmatized_qs_list)
+    cluster_objs, vecs, global_keywords, lemmatized_qs_list = generate_modified_qs_data(labelling_corpus.documents, clusters, q_ids_list,2)
+    scores_2gram = calculate_label_score(cluster_objs, vecs, global_keywords, lemmatized_qs_list)
     
     combined_scores = []
     for score_1gram, score_2gram in zip(scores_1gram, scores_2gram):
@@ -558,7 +558,7 @@ def generate_ngrams(n, words_list):
 :The inputs required are taken from the inputs of the parent function and an additional 'phrase_len' to tell number of grams  
 """
 
-def Generate_Modified_Qs_Data(documents, clusters, q_ids_list, phrase_len):
+def generate_modified_qs_data(documents, clusters, q_ids_list, phrase_len):
     #Defining Lists to store required Qs Data
     modified_clus_list = [] #Stores Clusters with modified Qs #ngrams cluster list / cluster list of ngrams
     lemmatized_qs_list = [] #Stores all Questions in Corpus (Modified by joining Keywords in Lemma form)
@@ -590,7 +590,7 @@ def Generate_Modified_Qs_Data(documents, clusters, q_ids_list, phrase_len):
         cluster_data["original_clustered_qs"] = og_clus_qs
         cluster_objects[cluster_index] = cluster_data
     
-    global_keywords = Generate_Global_Keywords(documents, phrase_len)
+    global_keywords = generate_global_keywords(documents, phrase_len)
     vecs = embed(list(global_keywords))
     return cluster_objects, vecs, global_keywords, lemmatized_qs_list
     
@@ -607,7 +607,7 @@ def Generate_Modified_Qs_Data(documents, clusters, q_ids_list, phrase_len):
 : Keyword Length decides if each keyword is a 1-gram, 2-gram, etc. 
 """
 
-def Generate_Global_Keywords(documents, keyword_length):
+def generate_global_keywords(documents, keyword_length):
     num_docs = len(documents)
     global_keywords = set() #List to store all keywords in corpus (each keyword here is a n-gram, where n is determined by keyword_length)
     for i in range(num_docs):
@@ -630,11 +630,11 @@ def Generate_Global_Keywords(documents, keyword_length):
 
 3. Return list of Top 5 Label Scores for each cluster
 
-:The inputs required are taken from the outputs of the Generate_Modified_Qs_Data function 
+:The inputs required are taken from the outputs of the generate_modified_qs_data function 
 : The cluster object has attributes: centroid of cluster, raw text questions, lemmatized questions
 """
 
-def Calculate_Label_Score(cluster_objects, vecs, global_keywords, lemmatized_qs_list):
+def calculate_label_score(cluster_objects, vecs, global_keywords, lemmatized_qs_list):
     #For each term and each cluster, get frequencies over all qs present in our corpus (NMI)
     num_clus = len(cluster_objects)
     all_cluster_scores = []
@@ -648,7 +648,7 @@ def Calculate_Label_Score(cluster_objects, vecs, global_keywords, lemmatized_qs_
         gloabl_min_distance = min(distances)
         logging.debug("Global Minimum Distance for cluster:",gloabl_min_distance)
     
-        NMI_scores = Compute_NMI_Metrics(global_keywords, lemmatized_qs_list, modified_clus_qs)
+        NMI_scores = compute_nmi_metrics(global_keywords, lemmatized_qs_list, modified_clus_qs)
 
         max_NMI = max(NMI_scores,key=lambda x:x[1])[1]
         logging.debug("Maximum NMI Score in Cluster:",max_NMI)
@@ -673,7 +673,7 @@ and the NMI list, which are modified at each call of this function
 """
 
 
-def Compute_NMI_Metrics(global_keywords, lemmatized_qs_list, clus_qs):
+def compute_nmi_metrics(global_keywords, lemmatized_qs_list, clus_qs):
     NMI_scores = []
     total_num_qs = len(lemmatized_qs_list) #Total number of Qs
     for term in global_keywords: #In cluster, calculating I(term,cluster)
