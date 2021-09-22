@@ -9,6 +9,14 @@ Doc.set_extension("lemma_list", default=[])
 Doc.set_extension("clusterlabel", default=" ")
 
 class LabellingClusterCorpus(Corpus):
+
+    def __init__(self, docs, nlp, embeddings, q_ids, clusters):
+        self._raw_docs = docs
+        self._nlp = nlp
+        self.documents = []
+        self.process_docs(embeddings, q_ids, clusters)
+    
+
     def process_docs(self, embeddings, q_ids, clusters):
 
         #Constructing Dictionary with Question_Id as Key and Cluster ID as the value
