@@ -677,6 +677,9 @@ def compute_nmi_metrics(global_keywords, lemmatized_qs_list, clus_qs):
     NMI_scores = []
     total_num_qs = len(lemmatized_qs_list) #Total number of Qs
     for term in global_keywords: #In cluster, calculating I(term,cluster)
+        occurences_term_in_cluster = 0 #Number of occurences of the term in the cluster
+        occurences_term_not_in_cluster = 0 #Number of occurences of the term not in the cluster
+        term_in_cluster = 0 #Bool # To ensure we only calculate %occurences for terms in cluster and to assign 0 scores to terms not in cluster
         P_t0 = 0.0
         P_t1 = 0.0
         P_u0 = 0.0
@@ -699,9 +702,17 @@ def compute_nmi_metrics(global_keywords, lemmatized_qs_list, clus_qs):
                 if(ques not in clus_qs):
                     P_u0+=1
                     P_t1_u0+=1
+                    occurences_term_not_in_cluster+=1
                 else:
                     P_u1+=1
                     P_t1_u1+=1
+                    occurences_term_in_cluster+=1
+                    term_in_cluster = 1
+        if(term_in_cluster): 
+            #If term in cluster, from NMI paper making sure that a frequent term in other clusters, but not in this gets negative NMI
+            #See page 3 of NMI paper, and reference [1] on footer
+            expected_percentage_term_occur_in_cluster = len(clus_qs)/len(lemmatized_qs_list)
+            actual_percentage_term_occur_in_cluster = occurences_term_in_cluster/(occurences_term_not_in_cluster + occurences_term_in_cluster)
         I_t_c = 0.0
         P_t0/=total_num_qs
         P_t1/=total_num_qs
@@ -735,6 +746,14 @@ def compute_nmi_metrics(global_keywords, lemmatized_qs_list, clus_qs):
         H_t*=-1
         H_c*=-1
         NMI_i_t_c = 2*(I_t_c/(H_c + H_t))
+        if(term_in_cluster):
+            if(actual_percentage_term_occur_in_cluster < expected_percentage_term_occur_in_cluster):
+                logging.debug("Term where percentage of actual occurences are lesser than expected, if in cluster :", term)
+                logging.debug("Actual %:", actual_percentage_term_occur_in_cluster)
+                logging.debug("Expected %:", expected_percentage_term_occur_in_cluster)
+                NMI_i_t_c*=-1 #As from the paper, to ensure this term doesn't get selected
+        else:
+            NMI_i_t_c = 0
         NMI_scores.append([term, NMI_i_t_c])
     return NMI_scores
         
