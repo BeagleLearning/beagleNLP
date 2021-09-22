@@ -368,9 +368,7 @@ using Normalised Mutual Information (NMI) and Distance from the Cluster Centroid
 
 def return_cluster_labels_nmi_ngrams_centroid(embeddings,qs_list,q_ids_list,clusters): 
 
-    labelling_corpus = LabellingClusterCorpus(qs_list, nlp)
-    labelling_corpus.process_docs(embeddings, q_ids_list, clusters)
-    
+    labelling_corpus = LabellingClusterCorpus(qs_list, nlp, embeddings, q_ids_list, clusters)
     
     cluster_objs, lemmatized_qs_list = generate_modified_qs_data(labelling_corpus.documents, clusters, q_ids_list,1)
     global_keywords = generate_global_keywords(labelling_corpus.documents, 1)
@@ -581,9 +579,9 @@ def generate_modified_qs_data(documents, clusters, q_ids_list, phrase_len):
             q_index = q_ids_list.index(id)
             clus_embeddings.append(documents[q_index]._.embedding)
             lemma_q = documents[q_index]._.lemma_list
-            phrase_q = generate_ngrams(phrase_len,lemma_q)
-            lemmatized_qs_list.append(phrase_q)
-            modified_clus_qs.append(phrase_q) #Adding modified question to new formed cluster of modified questions
+            n_grams_for_question = generate_ngrams(phrase_len,lemma_q)
+            lemmatized_qs_list.append(n_grams_for_question)
+            modified_clus_qs.append(n_grams_for_question) #Adding modified question to new formed cluster of modified questions
             og_clus_qs.append(documents[q_index]._.raw_text)
         clus_centroid = np.mean(clus_embeddings, axis=0)
         centroids.append(clus_centroid)
