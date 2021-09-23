@@ -367,7 +367,6 @@ using Normalised Mutual Information (NMI) and Distance from the Cluster Centroid
 """
 
 def return_cluster_labels_nmi_ngrams_centroid(embeddings,qs_list,q_ids_list,clusters): 
-    print(clusters)
 
     labelling_corpus = LabellingClusterCorpus(qs_list, nlp, embeddings, q_ids_list, clusters)
     
