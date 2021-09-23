@@ -367,6 +367,7 @@ using Normalised Mutual Information (NMI) and Distance from the Cluster Centroid
 """
 
 def return_cluster_labels_nmi_ngrams_centroid(embeddings,qs_list,q_ids_list,clusters): 
+    print(clusters)
 
     labelling_corpus = LabellingClusterCorpus(qs_list, nlp, embeddings, q_ids_list, clusters)
     
@@ -745,7 +746,10 @@ def compute_nmi_metrics(global_keywords, lemmatized_qs_list, clus_qs):
                 H_c+=0
         H_t*=-1
         H_c*=-1
-        NMI_i_t_c = 2*(I_t_c/(H_c + H_t))
+        if(I_t_c != 0 and (H_c + H_t) !=0):
+            NMI_i_t_c = 2*(I_t_c/(H_c + H_t))
+        else:
+            NMI_i_t_c = 0
         if(term_in_cluster):
             if(actual_percentage_term_occur_in_cluster < expected_percentage_term_occur_in_cluster):
                 logging.debug("Term where percentage of actual occurences are lesser than expected, if in cluster :", term)
