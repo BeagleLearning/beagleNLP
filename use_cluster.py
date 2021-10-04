@@ -422,7 +422,7 @@ def get_label_type(label):
 2. The algorithm to select these 2 Keywords is basically a set of if-else conditions 
 3. It is broken down into 4 cases, based on if the top 2 labels by score are a particular combination of 1 or 2 grams 
 4. For each case, certain conditions are checked, to return the best set of labels for that cluster
-5. A diagram for this algorithm, created by Araz is found here: 
+5. A diagram for this algorithm, created by Araz is found here: https://drive.google.com/file/d/1v_lFS_jUgqzPfRGNPpCcuZwHtdVF1BuO/view?usp=sharing
 :The inputs required are the label scores cluster wise 
 """
 
@@ -459,7 +459,7 @@ def return_best_label_combination(label_scores):
                         selected = [label_2, label_4]
                         final_labels.append(selected)
 
-        #CASE II label_1 1 gram label_2 2 gram
+        #CASE II label_1 1 gram label_2 1 gram
 
         elif(label_1_type==1 and label_2_type==1):
             if(label_3_type==1):
