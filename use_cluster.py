@@ -363,7 +363,7 @@ def return_cluster_dict(q_cluster, q_ids_list):
 using Normalised Mutual Information (NMI) and Distance from the Cluster Centroid 
 :The inputs required are the embeddings (generated previously from cluster functions), list of questions, question ids & clusters generated 
 : Read about NMI here: https://arxiv.org/pdf/1702.08199.pdf
-: For how Araz developed the custom score/metric, refer here: 
+: For how Araz developed the custom score/metric, we will release a Research Paper, which would be attached here. 
 """
 
 def return_cluster_labels_nmi_ngrams_centroid(embeddings,qs_list,q_ids_list,clusters): 
