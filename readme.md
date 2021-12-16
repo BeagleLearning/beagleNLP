@@ -28,3 +28,5 @@ ___
 1. Make sure your virtual env is active (`source virt/bin/activate`)
 2. Start the server with `python application.py`
 
+
+ALL CODE IN THIS PROJECT COPYRIGHT BEAGLE LEARNING, INC 2020
