@@ -26,7 +26,7 @@ class General:
         try:
             lemmatizer = WordNetLemmatizer()
 
-            custom_stopword_list = ['how','what','when','where','why','who','u']
+            custom_stopword_list = ['how','what','when','where','why','who','u','does','do', 'would','many']
             stop_words = stopwords.words('english')
             stop_words.extend(custom_stopword_list)
 
@@ -35,17 +35,15 @@ class General:
             for text in text_list:
                 if convert_to_lower:
                     text = text.lower()
-                
-                if lemmatize:
-                    text = [lemmatizer.lemmatize(word) for word in word_tokenize(text)]
-                
-                if remove_special_characters and remove_stop_words:
-                    text = [word for word in text if word.isalnum() and word not in stop_words]
-                elif remove_special_characters:
-                    text = [word for word in text if word.isalnum()]
-                elif remove_stop_words:
+
+                text = [word for word in word_tokenize(text)]
+
+                if remove_stop_words:
                     text = [word for word in text if word not in stop_words]
-                
+                if remove_special_characters:
+                    text = [word for word in text if word.isalnum()]
+                if lemmatize:
+                    text = [lemmatizer.lemmatize(word) for word in text]
                 if not tokenize:
                     text = ' '.join(text)
                 
