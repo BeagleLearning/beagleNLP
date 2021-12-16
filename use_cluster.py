@@ -32,8 +32,9 @@ import logging
 #Loading the USE Model with Tensorflow Hub
 
 try:
-    os.environ['TFHUB_CACHE_DIR'] = "C:/Users/arazs/Documents/GitHub/beagleNLP/test_hub"
-    embed = hub.load("https://tfhub.dev/google/universal-sentence-encoder-large/5")
+    # # os.environ['TFHUB_CACHE_DIR'] = "C:/Users/arazs/Documents/GitHub/beagleNLP/test_hub"
+    
+    # embed = hub.load("https://tfhub.dev/google/universal-sentence-encoder-large/5")
     logging.debug('Model Loaded')
 except:
     raise BeagleError(errors.USE_LOAD_ERROR) #If model not loaded

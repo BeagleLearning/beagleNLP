@@ -16,11 +16,17 @@ whole environment by running `deactivate` at any time.
 5. Run `pip install -r requirements.txt`. This may take a while and requires a GB or two of ram for
 downloading and installing the libraries of word vectors and word freqencies.
 
+Torch and Transformers models
+-----------------------------
+1. Check the `expected_directory_structure.txt` file and make sure your `resources` 
+directory has the same structure and content
+2. Follow the links in the .txt file to download the relevant content (~1.5GB)
 
 Use
 ___
 
 1. Make sure your virtual env is active (`source virt/bin/activate`)
 2. Start the server with `python application.py`
+
 
 ALL CODE IN THIS PROJECT COPYRIGHT BEAGLE LEARNING, INC 2020

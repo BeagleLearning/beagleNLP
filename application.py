@@ -3,6 +3,7 @@
 import os
 import logging
 from flask import Flask, request, jsonify, send_file, g
+from numpy.core.records import find_duplicate
 import analysis
 import numpy as np
 from build_tag_cluster import buildTagCluster
@@ -11,6 +12,11 @@ import errors
 from use_cluster import get_data_embeddings, best_score_HAC_sparse, HAC_with_Sparsification, get_best_HAC_normal, return_cluster_dict
 import time
 from functools import wraps
+
+# Typing and deduplication imports
+import tensorflow_hub as hub
+from classifier_10_cats import get_predictions
+from use_deduplication import group_duplicates, find_duplicates_one_to_many
 
 
 if "PYTHON_ENVIRONMENT" in os.environ.keys() and os.environ['PYTHON_ENVIRONMENT'] == "production":
@@ -25,8 +31,8 @@ END_OF_PAGE = '</body>\n</html>'
 
 # EB looks for an 'application' callable by default.
 application = Flask(__name__, static_url_path='/static/')
-
 application.logger.info("Flask app created!")
+
 
 """
 #For timing purposes
@@ -215,13 +221,46 @@ def handleUSECluster3():
         best_scores = list(map(int,get_best_HAC_normal(embeddings, data_used_for_demo)[1]))
         return jsonify(return_cluster_dict(best_scores,q_ids_list))
     
-        
+
+##### TYPING AND DEDUPLICATION ROUTES #####
+
+@application.route("/type/", methods=['POST'])
+def classify_question_types():
+    data = request.get_json()
+    if "questions" not in data:
+        raise BeagleError(errors.MISSING_PARAMETERS_FOR_ROUTE)
+
+    categorized_questions = get_predictions(data['questions'])
+
+    return jsonify(categorized_questions)
 
 
+@application.route("/deduplicate/all/", methods=['POST'])
+def group_duplicate_questions():
+    data = request.get_json()
+    if "questions" not in data:
+        raise BeagleError(errors.MISSING_PARAMETERS_FOR_ROUTE)
+
+    grouped_duplicates = group_duplicates(data['questions'])
+
+    return jsonify(grouped_duplicates)
+
+
+@application.route("/deduplicate/compare-one/", methods=['POST'])
+def find_duplicate_questions():
+    data = request.get_json()
+    if ("questions" not in data) or ("target" not in data):
+        raise BeagleError(errors.MISSING_PARAMETERS_FOR_ROUTE)
+
+    duplicate_ids_found = find_duplicates_one_to_many(target_question=data['target'],\
+        questions_to_compare=data['questions'])
+
+    return jsonify(duplicate_ids_found)
 
 
 # run the app.
 if __name__ == "__main__":
+
     # Setting debug to True enables debug output. This line should be
     # removed before deploying a production app.
     application.run()

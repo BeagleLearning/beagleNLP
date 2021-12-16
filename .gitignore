@@ -12,3 +12,5 @@ __pycache__
 init
 .python-version
 .vscode/*
+resources/*
+!resources/expected_directory_structure.txt

@@ -1,0 +1,10 @@
+resources/
+|-- 10_cats_deberta/
+    |-- torch_hf_deberta_epoch_5.model
+
+
+You can download the deBERTa retrained model weights here:
+https://drive.google.com/file/d/1Qq0sw9GYbUQaieMQAOlJYLxjzqM2Hutu/view?usp=sharing
+
+
+TODO: Following a conversation with Turner, the file should be stored in an S3 bucket in the future
