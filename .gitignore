@@ -17,3 +17,4 @@ init
 /Bagyasree/Testing/test_data.csv
 /Bagyasree/GoogleNews-vectors-negative300.bin.gz
 /Bagyasree/wiki-news-300d-1M.vec
+.vscode/*

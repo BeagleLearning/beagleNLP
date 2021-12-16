@@ -2,11 +2,17 @@
 """ Flask application for Beagle's NLP analysis """
 import os
 import logging
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, Response
 import analysis
+import numpy as np
 from build_tag_cluster import buildTagCluster
 from beagleError import BeagleError
 import errors
+from use_cluster import get_data_embeddings, best_score_HAC_sparse, HAC_with_Sparsification, get_best_HAC_normal, return_cluster_dict
+import time
+from functools import wraps
+
+from Question_Categorization.cluster_or_tag import FinalAlgorithms
 
 if "PYTHON_ENVIRONMENT" in os.environ.keys() and os.environ['PYTHON_ENVIRONMENT'] == "production":
     logging.basicConfig(
@@ -23,11 +29,70 @@ application = Flask(__name__, static_url_path='/static/')
 
 application.logger.info("Flask app created!")
 
+"""
+#For timing purposes
+@application.before_request
+def before_req_func():
+    g.timings = {}
+
+@application.after_request
+def after_req_func(response):
+    response.data += ('\n' + str(g.timings)).encode('ascii')
+    return response
+
+
+
+def time_this(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        start = time.time()
+        r = func(*args, **kwargs)
+        end = time.time()
+        g.timings[func.__name__] = end-start
+        return r
+    return wrapper
+
+"""
 
 @application.route("/", methods=["GET"])
 def index_route():
     """ Confirms the app is running """
     return HEADER_TEXT + "Welcome to the Beagle NLP API" + END_OF_PAGE
+
+
+@application.route("/cluster-questions", methods=["POST"])
+def clustering():
+    data = request.get_json()
+    if "questions" not in data:
+        raise BeagleError(errors.MISSING_PARAMETERS_FOR_ROUTE)
+
+    if len(data["questions"]) < 2:
+        raise BeagleError(errors.TOO_FEW_QUESTIONS)
+
+    questions = data['questions']
+    try:
+        clusters = FinalAlgorithms().clustering(questions)
+        return jsonify(clusters)
+    except Exception as e:
+        application.logger.error(e)
+        return Response(response = str(e), status = 400)
+
+@application.route("/tag-questions", methods=["POST"])
+def tagging():
+    data = request.get_json()
+    if "questions" not in data:
+        raise BeagleError(errors.MISSING_PARAMETERS_FOR_ROUTE)
+
+    if len(data["questions"]) < 2:
+        raise BeagleError(errors.TOO_FEW_QUESTIONS)
+
+    questions = data['questions']
+    try:
+        tagged_questions = FinalAlgorithms().tagging(questions)
+        return jsonify(tagged_questions)
+    except Exception as e: 
+        application.logger.error(e)
+        return Response(response = str(e), status = 400)
 
 
 @application.route("/playground", methods=["GET"])
@@ -127,6 +192,68 @@ def handle_invalid_usage(error):
     response = jsonify(error.to_dict())
     response.status_code = error.status_code
     return response
+
+"""CUSTOM ROUTE: Sparse HAC"""
+@application.route("/useclustersparse/", methods=["POST"])
+def handleUSECluster():
+    
+    data = request.get_json()
+    application.logger.debug(type(data)) #List
+    application.logger.debug(len(data))
+    if(len(data) < 6):
+        raise BeagleError(errors.TOO_FEW_QUESTIONS)
+    
+    
+    embeddings, data_used_for_demo, q_ids_list = get_data_embeddings(data)
+    best_scores = list(map(int,best_score_HAC_sparse(embeddings, data_used_for_demo, 2)[1]))
+    return jsonify(return_cluster_dict(best_scores,q_ids_list))
+    
+
+"""CUSTOM ROUTE 2: Normal HAC"""
+@application.route("/useclusternormal/", methods=["POST"])
+def handleUSECluster2():
+    
+    data = request.get_json()
+    application.logger.debug((type(data))) #List
+    application.logger.debug(len(data))
+    if(len(data) < 6):
+        raise BeagleError(errors.TOO_FEW_QUESTIONS)
+    
+    embeddings, data_used_for_demo, q_ids_list = get_data_embeddings(data)
+    
+    best_scores = list(map(int,get_best_HAC_normal(embeddings, data_used_for_demo)[1]))
+    return jsonify(return_cluster_dict(best_scores,q_ids_list))
+    
+    
+
+    
+"""CUSTOM ROUTE 3: Condition Based HAC"""
+@application.route("/usecondition/", methods=["POST"])
+
+def handleUSECluster3():
+    
+    
+    data = request.get_json()
+    application.logger.debug((type(data))) #List
+    application.logger.debug(len(data))
+    if(len(data) < 6):
+        raise BeagleError(errors.TOO_FEW_QUESTIONS) #Communicate we don't support
+    
+    embeddings, data_used_for_demo, q_ids_list = get_data_embeddings(data)
+    if(len(data_used_for_demo)<50):
+        
+        best_scores = list(map(int,best_score_HAC_sparse(embeddings, data_used_for_demo, 2)[1]))
+        return jsonify(return_cluster_dict(best_scores,q_ids_list))
+    
+        
+    else:
+        
+        best_scores = list(map(int,get_best_HAC_normal(embeddings, data_used_for_demo)[1]))
+        return jsonify(return_cluster_dict(best_scores,q_ids_list))
+    
+        
+
+
 
 
 # run the app.
