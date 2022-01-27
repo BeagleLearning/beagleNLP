@@ -27,6 +27,15 @@ END_OF_PAGE = '</body>\n</html>'
 # EB looks for an 'application' callable by default.
 application = Flask(__name__, static_url_path='/static/')
 
+# Checks that the data passed to the categorization routes are valid.
+def assert_valid_params_for_categorization(data):
+    if "questions" not in data:
+        raise BeagleError(errors.MISSING_PARAMETERS_FOR_ROUTE)
+
+    if len(data["questions"]) < 2:
+        raise BeagleError(errors.TOO_FEW_QUESTIONS)
+    
+
 application.logger.info("Flask app created!")
 
 """
@@ -62,13 +71,9 @@ def index_route():
 
 @application.route("/cluster-questions", methods=["POST"])
 def clustering():
+    """Encodes the set of questions using Universal Sentence Encoder and clusters them hierarchically (agglomerative). Uses sklearn's module.""""
     data = request.get_json()
-    if "questions" not in data:
-        raise BeagleError(errors.MISSING_PARAMETERS_FOR_ROUTE)
-
-    if len(data["questions"]) < 2:
-        raise BeagleError(errors.TOO_FEW_QUESTIONS)
-
+    assert_valid_params_for_categorization(data)
     questions = data['questions']
     try:
         clusters = FinalAlgorithms().clustering(questions)
@@ -79,13 +84,9 @@ def clustering():
 
 @application.route("/tag-questions", methods=["POST"])
 def tagging():
+    """Tags questions using Complement Naive Bayes and LDA.""""
     data = request.get_json()
-    if "questions" not in data:
-        raise BeagleError(errors.MISSING_PARAMETERS_FOR_ROUTE)
-
-    if len(data["questions"]) < 2:
-        raise BeagleError(errors.TOO_FEW_QUESTIONS)
-
+    assert_valid_params_for_categorization(data)
     questions = data['questions']
     try:
         tagged_questions = FinalAlgorithms().tagging(questions)

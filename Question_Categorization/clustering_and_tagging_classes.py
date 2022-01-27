@@ -11,6 +11,18 @@ from nltk.tokenize import word_tokenize
 import numpy as np
 from sklearn.naive_bayes import  ComplementNB
 
+CUSTOM_STOPWORD_LIST = ['how','what','when','where','why','who','u','does','do', 'would','many']
+
+#Defines the distance threshold in agglomerative_clustering.
+DISTANCE_THRESHOLD = 1.35
+
+#Initial number of tags to extract from question set before further pruning, in get_top_n_keywords.
+CANDIDATE_TAG_NUM = 40
+#Fraction of range, used for computing the threshold in complement_naive_bayes.
+FRACTION = 0.3
+#Minimum number of questions to assign to each tag in complement_naive_bayes.
+N = 2
+
 class General:
     def preprocess(self, text_list, convert_to_lower = True, lemmatize = True, remove_special_characters = True, remove_stop_words = True, tokenize = False):
         '''
@@ -26,9 +38,8 @@ class General:
         try:
             lemmatizer = WordNetLemmatizer()
 
-            custom_stopword_list = ['how','what','when','where','why','who','u','does','do', 'would','many']
             stop_words = stopwords.words('english')
-            stop_words.extend(custom_stopword_list)
+            stop_words.extend(CUSTOM_STOPWORD_LIST)
 
             preprocessed_text_list = []
 
@@ -72,7 +83,8 @@ class General:
 
         try:
 
-            os.environ['TFHUB_CACHE_DIR'] = '/Users/bags1/GVC - Beagle Learning/Code/beagleNLP/Bagyasree'
+            dir_path = os.path.dirname(os.path.realpath(__file__))
+            os.environ['TFHUB_CACHE_DIR'] = dir_path
             embed = hub.load("https://tfhub.dev/google/universal-sentence-encoder/4") 
             vectors = embed(dataset)
 
@@ -85,7 +97,7 @@ class General:
             print('Error: ',e)
             raise e
 
-    def lda_merge(self, labelled_questions, return_group_tags):
+    def lda_merge(self, labelled_questions, return_group_tags, question_number_ratio):
         '''
             Merges groups of questions based on similarity of questions within the groups using LDA.
 
@@ -104,16 +116,15 @@ class General:
             label_docs = [' '.join(labelled_questions[label]) for label in labels]
 
             #Fit an LDA model on the concatenated strings based on token counts and generate topics.
-            l = label_docs
             vec = CountVectorizer(analyzer='word', ngram_range=(1,3))
-            X = vec.fit_transform(l)
-            model = lda.LDA(n_topics=math.ceil(0.7*len(labels)), random_state=1)
+            X = vec.fit_transform(label_docs)
+            model = lda.LDA(n_topics=math.ceil(question_number_ratio*len(labels)), random_state=1)
             model.fit(X)
             doc_topic = model.doc_topic_
 
             #Find the topic to which each label belongs and create a dictionary of label clusters.
             label_clusters = {}
-            for i in range(len(l)):
+            for i in range(len(label_docs)):
                 topic = doc_topic[i].argmax()
                 if topic not in label_clusters:
                     label_clusters[topic] = []
@@ -124,9 +135,8 @@ class General:
             #Put all questions belonging to a cluster of labels in the same group.
             for topic in label_clusters:
                 labels = label_clusters[topic]
-                question_set = [question for label in labels for question in labelled_questions[label]]
-                question_set = list(set(question_set))
-                merged_question_groups[topic] = question_set
+                question_set = set([question for label in labels for question in labelled_questions[label]])
+                merged_question_groups[topic] = list(question_set)
             
             
             if(return_group_tags):
@@ -159,7 +169,7 @@ class Clustering:
         '''
         try:
             #Distance threshold: Distance up to which merging happens.
-            cluster = AgglomerativeClustering(n_clusters = None, affinity = 'euclidean', linkage = 'ward', distance_threshold=1.35, compute_full_tree=True)
+            cluster = AgglomerativeClustering(n_clusters = None, affinity = 'euclidean', linkage = 'ward', distance_threshold=DISTANCE_THRESHOLD, compute_full_tree=True)
             clusters = cluster.fit_predict(vectors)
             return clusters
         
@@ -184,41 +194,35 @@ class Tagging:
             preprocessed_questions = General().preprocess(questions, tokenize=False)
             vectorizer = TfidfVectorizer(ngram_range=(1,2))
             doc_term_matrix = vectorizer.fit_transform(preprocessed_questions)
-            all_terms = vectorizer.get_feature_names()
+            all_terms = vectorizer.get_feature_names_out()
             doc_term_array = doc_term_matrix.toarray()
             
-            term_scores = [0 for i in range(0,len(all_terms))]
+            term_scores = np.array([0] * len(all_terms))
 
-            # Fetch the 40 highest scoring terms by adding the scores received by the term for all questions in the tf-idf matrix.
+            # Fetch the CANDIDATE_TAG_NUM highest scoring terms by adding the scores received by the term for all questions in the tf-idf matrix.
             for i in range(0, len(questions)):
                 doc = doc_term_array[i]
                 for term_index in range(0, len(doc)):
                     term_scores[term_index] += doc[term_index]
             
-            term_scores = np.array(term_scores)
-            top_terms = (-term_scores).argsort()[:40]
+            top_terms = (-term_scores).argsort()[:CANDIDATE_TAG_NUM]
 
-            #Find the frequency of the top 40 terms in the English language
-            freqs = []
-            for term in top_terms:
+            #Find the frequency of the top CANDIDATE_TAG_NUM terms in the English language
+            freqs = np.array()
+            for term_index in top_terms:
                 try:
-                    freqs.append(word_frequency(all_terms[term],"en"))
+                    freqs.append(word_frequency(all_terms[term_index],"en"))
                 except:
                     pass
 
             #Fetch the top n rarest terms in the English language out of the set of 40 terms.
-            final_n = n
-            freqs = np.array(freqs)
-            top = (freqs).argsort()[:final_n]
+            top_terms_by_frequency = (freqs).argsort()[:n]
             roots = []
-            for term in top:
+            for term in top_terms_by_frequency:
                 roots.append(all_terms[top_terms[term]])
             
-            top_n = []
-            for term in top_terms:
-                top_n.append(all_terms[term])
             
-            return top_n
+            return top_terms_by_frequency
         
         except Exception as e:
             print('Error: ',e)
@@ -248,22 +252,19 @@ class Tagging:
                     root_embedding = embed([root]) + 1
 
                     #Get the probability for each question belonging to the root.
-                    probabilities = cnb_clf.predict_proba(root_embedding)
+                    probabilities = cnb_clf.predict_proba(root_embedding)[0]
 
-                    #Find the top x percent of questions based on highest probabilites. Here, x = 30. 
-                    percentage = 0.3
-                    max = np.max(probabilities[0])
-                    min = np.min(probabilities[0])
-                    threshold = max - (max-min)*percentage
-                    args = [i for i in range(0, len(probabilities[0])) if probabilities[0][i] > threshold]
-                    questions_above_threshold = [questions[arg] for arg in args]
+                    #Find the top FRACTION of questions based on highest probabilites. 
+                    max = np.max(probabilities)
+                    min = np.min(probabilities)
+                    threshold = max - (max - min) * FRACTION
+                    questions_above_threshold = [questions[i] for i in range(0, len(probabilities)) if probabilities[i] > threshold]
 
-                    #Find top n questions
-                    n = 5
-                    args = np.argsort(-probabilities[0])[:n]
-                    top_n_questions = [questions[arg] for arg in args]
+                    #Find top N questions
+                    question_indices_by_probability = np.argsort(-probabilities)[:N]
+                    top_n_questions = [questions[index] for index in question_indices_by_probability]
 
-                    #Combine set of questions above the threshold and top n questions. This guarantees a minimum number of questions for the tag. 
+                    #Combine set of questions above the threshold and top N questions. This guarantees a minimum number of questions for the tag. 
                     #If we want only the questions whose probabilities are above the threshold, set root_questions = questions_above_threshold.
                     root_questions = list(set(questions_above_threshold + top_n_questions))
                     root_to_ques_dict[root] = root_questions
