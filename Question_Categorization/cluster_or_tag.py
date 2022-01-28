@@ -42,7 +42,7 @@ class FinalAlgorithms:
             #Format output.
             output = []
             for cluster_label in clusters:
-                output.append({'label':cluster_label, 'questions':clusters[cluster_label]})
+                output.append({'label':str(cluster_label), 'questions':clusters[cluster_label]})
             
             return output
         
