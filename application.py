@@ -71,7 +71,7 @@ def index_route():
 
 @application.route("/cluster-questions", methods=["POST"])
 def clustering():
-    """Encodes the set of questions using Universal Sentence Encoder and clusters them hierarchically (agglomerative). Uses sklearn's module.""""
+    """Encodes the set of questions using Universal Sentence Encoder and clusters them hierarchically (agglomerative). Uses sklearn's module."""
     data = request.get_json()
     assert_valid_params_for_categorization(data)
     questions = data['questions']
@@ -84,7 +84,7 @@ def clustering():
 
 @application.route("/tag-questions", methods=["POST"])
 def tagging():
-    """Tags questions using Complement Naive Bayes and LDA.""""
+    """Tags questions using Complement Naive Bayes and LDA."""
     data = request.get_json()
     assert_valid_params_for_categorization(data)
     questions = data['questions']

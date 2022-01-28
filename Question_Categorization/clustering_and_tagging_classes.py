@@ -10,6 +10,8 @@ from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 import numpy as np
 from sklearn.naive_bayes import  ComplementNB
+import logging
+from scipy.spatial.distance import cosine
 
 CUSTOM_STOPWORD_LIST = ['how','what','when','where','why','who','u','does','do', 'would','many']
 
@@ -17,7 +19,7 @@ CUSTOM_STOPWORD_LIST = ['how','what','when','where','why','who','u','does','do',
 DISTANCE_THRESHOLD = 1.35
 
 #Initial number of tags to extract from question set before further pruning, in get_top_n_keywords.
-CANDIDATE_TAG_NUM = 40
+CANDIDATE_TERM_RATIO = 0.1
 #Fraction of range, used for computing the threshold in complement_naive_bayes.
 FRACTION = 0.3
 #Minimum number of questions to assign to each tag in complement_naive_bayes.
@@ -63,8 +65,8 @@ class General:
             return preprocessed_text_list
         
         except Exception as e:
-            print('Error: ',e)
-            raise e
+            err = 'Error in General.preprocess: ' + str(e)
+            raise Exception(err)
 
     def universal_sentence_encoder(self, dataset, return_embed = False):
         '''
@@ -94,8 +96,8 @@ class General:
                 return vectors
         
         except Exception as e:
-            print('Error: ',e)
-            raise e
+            err = 'Error in General.universal_sentence_encoder: ' + str(e)
+            raise Exception(err)
 
     def lda_merge(self, labelled_questions, return_group_tags, question_number_ratio):
         '''
@@ -152,8 +154,8 @@ class General:
             return return_dict
 
         except Exception as e:
-            print('Error: ',e)
-            raise e
+            err = 'Error in General.lda_merge: ' + str(e)
+            raise Exception(err)
             
 
 class Clustering:
@@ -174,7 +176,8 @@ class Clustering:
             return clusters
         
         except Exception as e:
-            raise e
+            err = 'Error in Clustering.agglomerative_clustering: ' + str(e)
+            raise Exception(err)
     
 
 class Tagging: 
@@ -187,7 +190,7 @@ class Tagging:
                 questions: List of strings.
             
             Output: 
-                top_n: List of strings where each string can be treated as a tag.
+                tags: List of strings where each string can be treated as a tag.
         '''
         try:
             #Get the TF-IDF matrix for the questions.
@@ -197,36 +200,33 @@ class Tagging:
             all_terms = vectorizer.get_feature_names_out()
             doc_term_array = doc_term_matrix.toarray()
             
-            term_scores = np.array([0] * len(all_terms))
-
-            # Fetch the CANDIDATE_TAG_NUM highest scoring terms by adding the scores received by the term for all questions in the tf-idf matrix.
+            term_scores = [0] * len(all_terms)
+            
+            # Fetch the top CANDIDATE_TERM_RATIO of the total number of terms by adding the scores received by the term for all questions in the tf-idf matrix.
             for i in range(0, len(questions)):
                 doc = doc_term_array[i]
                 for term_index in range(0, len(doc)):
                     term_scores[term_index] += doc[term_index]
             
-            top_terms = (-term_scores).argsort()[:CANDIDATE_TAG_NUM]
+            num_candidate_terms = math.ceil(len(all_terms) * CANDIDATE_TERM_RATIO)
+            top_candidate_terms = (-np.array(term_scores)).argsort()[:num_candidate_terms]
 
-            #Find the frequency of the top CANDIDATE_TAG_NUM terms in the English language
-            freqs = np.array()
-            for term_index in top_terms:
-                try:
-                    freqs.append(word_frequency(all_terms[term_index],"en"))
-                except:
-                    pass
+            #Find the frequency of the top num_candidate_terms terms in the English language
+            freqs = np.array([word_frequency(all_terms[term_index],"en") for term_index in top_candidate_terms])
+           
+            #Fetch the rarest terms in the English language out of the set of num_candidate_terms terms.
+            num_terms = math.ceil(n * num_candidate_terms)
+            top_terms_by_frequency = (freqs).argsort()[:num_terms]
 
-            #Fetch the top n rarest terms in the English language out of the set of 40 terms.
-            top_terms_by_frequency = (freqs).argsort()[:n]
-            roots = []
-            for term in top_terms_by_frequency:
-                roots.append(all_terms[top_terms[term]])
+            tags = []
+            for candidate_term_index in top_terms_by_frequency:
+                tags.append(all_terms[top_candidate_terms[candidate_term_index]])
             
-            
-            return top_terms_by_frequency
+            return tags
         
         except Exception as e:
-            print('Error: ',e)
-            raise e
+            err = 'Error in Tagging.get_top_n_keywords: ' + str(e)
+            raise Exception(err)
 
     def complement_naive_bayes(self, roots, questions):
         '''
@@ -272,10 +272,10 @@ class Tagging:
             return root_to_ques_dict
         
         except Exception as e:
-            print('Error: ',e)
-            raise e
+            err = 'Error in Tagging.complement_naive_bayes: ' + str(e)
+            raise Exception(err)
         
-    def map_tags(self, tag_dict):
+    def map_tags(self, tag_dict, embed):
         '''
             Maps a tuple of terms into a representative single term.
 
@@ -287,13 +287,46 @@ class Tagging:
         '''
         try:
             mapped_dict = {}
+            lemmatizer = WordNetLemmatizer()
+            
             for tag_tuple in tag_dict:
-                tag_string = tag_tuple[0] #Replace with a mapping algorithm
+
+                #Create an embedding for the set of questions belonging to the tuple of tags.
+                question_string = ' '.join([question for question in tag_dict[tag_tuple]])
+                question_embedding = embed([question_string])
+
+                #Create a list of tags, where each element is a list contained the lemmatized forms of words present in the tag.
+                tag_list = [[lemmatizer.lemmatize(word) for word in tag.split(' ')] for tag in tag_tuple]
+
+                #Create embeddings for the lemmatized tags.
+                tag_embedding_list = [' '.join(tag) for tag in tag_list]
+                tag_embeddings = embed(tag_embedding_list)
+                
+                #Compute the scores for each word present in the list of tags, based on their frequency in English.
+                word_list = list(set([word for tag in tag_list for word in tag]))
+                word_scores = {}
+                for word in word_list: 
+                    word_scores[word] = (word_frequency(word, 'en') * 100) + 1
+
+                #Compute scores for each tag in the list.
+                tag_scores = []
+                for tag in tag_list:
+                    #Compute the similarity between the tag and the question set.
+                    tag_similarity = 1 - cosine(question_embedding, tag_embeddings[tag_list.index(tag)])
+                    #Compute the average frequency in English of the words present in the tag.
+                    denom = np.array([word_scores[word] for word in tag]).mean()
+                    tag_score = tag_similarity/denom
+                    tag_scores.append(tag_score)
+                
+                #Select the highest scoring tag and assign the set of questions to it. 
+                tag_index = np.array(tag_scores).argmax()
+                tag_string = ' '.join(tag_list[tag_index])
+              
                 mapped_dict[tag_string] = tag_dict[tag_tuple]
 
             return mapped_dict
         
         except Exception as e:
-            print('Error: ',e)
-            raise e
+            err = 'Error in Tagging.map_tags: ' + str(e)
+            raise Exception(err)
 

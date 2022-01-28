@@ -4,22 +4,19 @@ from Question_Categorization.clustering_and_tagging_classes import Clustering, T
 
 class FinalAlgorithms:
 
-    def get_question_strings(self, questions):
+    def get_question_strings(self, questions, ids = False):
         try:
             #Create arrays of question IDs and question strings with matching indices.
-            # question_ids = []
-            # question_strings = []
-            # for question in questions:
-            #     question_ids.append(question['id'])
-            #     question_strings.append(question['text'])
-            
-            # return question_ids, question_strings
             question_strings =  list(map(lambda question: question["text"], questions))
+            if ids:
+                question_ids = list(map(lambda question: question["id"], questions))
+                return question_strings, question_ids
+
             return question_strings
         
         except Exception as e:
-            print('Error: ',e)
-            raise e
+            err = 'Error in FinalAlgorithms.get_question_strings: ' + str(e)
+            raise err
 
     #Agglomerative clustering using Universal Sentence Encoding
     def clustering(self, questions):
@@ -50,18 +47,18 @@ class FinalAlgorithms:
             return output
         
         except Exception as e:
-            print('Error: ',e)
-            raise e
+            err = 'Error in FinalAlgorithms.clustering: ' + str(e)
+            raise Exception(err)
             
     #Custom algorithm using Complement Naive Bayes and LDA
     def tagging(self, questions):
         try:
-            question_ids, question_strings = self.get_question_strings(questions)
+            question_strings, question_ids = self.get_question_strings(questions, ids = True)
 
             tagging_class = Tagging()
 
             #Find the top n terms in the questions that can be tags. The final dictionary will contain 0.7*n tags or less. (n<=40)
-            keywords = tagging_class.get_top_n_keywords(15, question_strings)
+            keywords = tagging_class.get_top_n_keywords(0.25, question_strings)
             
             #Map questions to tags.
             tag_dict = tagging_class.complement_naive_bayes(keywords, question_strings)
@@ -70,7 +67,8 @@ class FinalAlgorithms:
             merged_tag_dict = General().lda_merge(tag_dict, return_group_tags=True, question_number_ratio=0.7)
             
             #Map a tuple of tags to one single string.
-            merged_tag_dict = tagging_class.map_tags(merged_tag_dict)
+            embeddings, embed = General().universal_sentence_encoder(question_strings, return_embed=True)
+            merged_tag_dict = tagging_class.map_tags(merged_tag_dict, embed)
             
             #Match question IDs to tags.
             tagged_questions = {}
@@ -86,8 +84,8 @@ class FinalAlgorithms:
             return output
         
         except Exception as e:
-            print('Error: ',e)
-            raise e
+            err = 'Error in FinalAlgorithms.tagging: ' + str(e)
+            raise Exception(err)
 
 
 
