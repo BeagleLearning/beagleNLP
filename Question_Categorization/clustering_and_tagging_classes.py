@@ -18,8 +18,6 @@ CUSTOM_STOPWORD_LIST = ['how','what','when','where','why','who','u','does','do',
 #Defines the distance threshold in agglomerative_clustering.
 DISTANCE_THRESHOLD = 1.35
 
-#Initial number of tags to extract from question set before further pruning, in get_top_n_keywords.
-CANDIDATE_TERM_RATIO = 0.1
 #Fraction of range, used for computing the threshold in complement_naive_bayes.
 FRACTION = 0.3
 #Minimum number of questions to assign to each tag in complement_naive_bayes.
@@ -181,13 +179,14 @@ class Clustering:
     
 
 class Tagging: 
-    def get_top_n_keywords(self, n, questions):
+    def get_top_n_keywords(self, questions, n, candidate_term_ratio):
         '''
             Finds the keywords in the set of questions that can be used as tags. 
 
             Input:
-                n: Number of keywords to fetch. 
                 questions: List of strings.
+                n: Fraction of candidate tags to fetch.
+                candidate_term_ratio: Fraction of keywords extracted from question set to form the initial set of candidate tags.
             
             Output: 
                 tags: List of strings where each string can be treated as a tag.
@@ -202,13 +201,13 @@ class Tagging:
             
             term_scores = [0] * len(all_terms)
             
-            # Fetch the top CANDIDATE_TERM_RATIO of the total number of terms by adding the scores received by the term for all questions in the tf-idf matrix.
+            # Fetch the top candidate_term_ratio of the total number of terms by adding the scores received by the term for all questions in the tf-idf matrix.
             for i in range(0, len(questions)):
                 doc = doc_term_array[i]
                 for term_index in range(0, len(doc)):
                     term_scores[term_index] += doc[term_index]
             
-            num_candidate_terms = math.ceil(len(all_terms) * CANDIDATE_TERM_RATIO)
+            num_candidate_terms = math.ceil(len(all_terms) * candidate_term_ratio)
             top_candidate_terms = (-np.array(term_scores)).argsort()[:num_candidate_terms]
 
             #Find the frequency of the top num_candidate_terms terms in the English language

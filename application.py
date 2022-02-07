@@ -80,7 +80,7 @@ def clustering():
         return jsonify(clusters)
     except Exception as e:
         application.logger.error(e)
-        return Response(response = str(e), status = 400)
+        return Response(response = str(e), status = 500)
 
 @application.route("/tag-questions", methods=["POST"])
 def tagging():
@@ -93,7 +93,7 @@ def tagging():
         return jsonify(tagged_questions)
     except Exception as e: 
         application.logger.error(e)
-        return Response(response = str(e), status = 400)
+        return Response(response = str(e), status = 500)
 
 
 @application.route("/playground", methods=["GET"])
