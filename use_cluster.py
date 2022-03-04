@@ -423,7 +423,11 @@ def get_label_type(label):
 3. It is broken down into 4 cases, based on if the top 2 labels by score are a particular combination of 1 or 2 grams 
 4. For each case, certain conditions are checked, to return the best set of labels for that cluster
 5. A diagram for this algorithm, created by Araz is found here: https://drive.google.com/file/d/1v_lFS_jUgqzPfRGNPpCcuZwHtdVF1BuO/view?usp=sharing
-:The inputs required are the label scores cluster wise 
+: The inputs required are the label_scores
+: Format of label_scores is: list of list of list
+: Top list is consisting of lists, where each list represents each cluster
+: Each cluster list has lists which are of form: ['Label', 'Score']
+: [  [cluster1 list], [cluster2 list],... ] -> [cluster1 list] has: [ ['label1', 'score1'], ['label2', 'score2'], ... ]
 """
 
 
