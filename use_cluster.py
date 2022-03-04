@@ -636,12 +636,14 @@ def calculate_label_score(cluster_objects, global_keyword_embeddings, global_key
         logging.debug("Global Minimum Distance for cluster:",global_min_distance)
     
         NMI_scores = compute_nmi_metrics(global_keywords, lemmatized_qs_list, modified_clus_qs)
+        #NMI_scores is a list of lists, with the score and term grouped together
 
         max_NMI = max(NMI_scores,key=lambda x:x[1])[1]
         logging.debug("Maximum NMI Score in Cluster:",max_NMI)
         logging.debug("Length of score list:",len(NMI_scores))
         assert_equal(len(NMI_scores),len(distances)) #Making sure equal lenghts for math to work out xD
-        new_score = [[x[0],x[1] + (1/d)*global_min_distance*max_NMI*0.5] for x,d in zip(NMI_scores,distances)]
+        #new_score = [[x[0],x[1] + (1/d)*global_min_distance*max_NMI*0.5] for x,d in zip(NMI_scores,distances)]
+        new_score = compute_new_score(NMI_scores, distances, max_NMI, global_min_distance)
         new_score.sort(key = lambda x: x[1], reverse=True)
         logging.debug("New Score based Labels:",new_score[:5])
         logging.debug("Cluster Qs:",og_clus_qs)
@@ -747,6 +749,21 @@ def compute_nmi_metrics(global_keywords, lemmatized_qs_list, clus_qs):
         NMI_scores.append([term, NMI_i_t_c])
     return NMI_scores
         
-        
+"""
+> The objective of this function is to:
+1. Calculate the New Score which is from the combination of the NMI score and the distances from Centroid
+    
+2. Takes in the NMI Scores and the Distances, and returns the list of New Scores according to the metric created
+
+3. Requires the Maximum NMI and the Global Minimum Distance for scaling and equal weighing as defined in metric
+
+:The inputs required are: NMI Scores, Distances, Maximum NMI Score and Global Minimum Distance
+:The format of NMI_Scores and Distances as is defined in calculate_label_score
+"""
+
+def compute_new_score(NMI_Scores, Distances, Max_NMI_Score, Global_Min_Distance):
+    return [[x[0],x[1] + (1/d)*Global_Min_Distance*Max_NMI_Score*0.5] for x,d in zip(NMI_Scores,Distances)]
+
+
 #Command to use with from terminal
 #curl --header "Content-Type:application/json" --request POST --data "@C:\Users\arazs\Documents\Beagle Learning Intern\test_data4.json" http://localhost:5000/usecondition/
