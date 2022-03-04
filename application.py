@@ -169,8 +169,15 @@ def handleUSECluster():
     
     
     embeddings, data_used_for_demo, q_ids_list = get_data_embeddings(data)
+    output = []
     best_scores = list(map(int,best_score_HAC_sparse(embeddings, data_used_for_demo, 2)[1]))
-    return jsonify(return_cluster_dict(best_scores,q_ids_list))
+    cluster_list = return_cluster_dict(best_scores,q_ids_list)
+    labels = return_cluster_labels_nmi_ngrams_centroid(embeddings, data_used_for_demo, q_ids_list, cluster_list)
+    for cluster_id in cluster_list:
+        q_ids = cluster_list[cluster_id]
+        cluster_label = ' , '.join(labels[cluster_id])
+        output.append({"q_ids":q_ids, "label":cluster_label})
+    return jsonify(output)
     
 
 """CUSTOM ROUTE 2: Normal HAC"""
@@ -184,9 +191,15 @@ def handleUSECluster2():
         raise BeagleError(errors.TOO_FEW_QUESTIONS)
     
     embeddings, data_used_for_demo, q_ids_list = get_data_embeddings(data)
-    
+    output = []
     best_scores = list(map(int,get_best_HAC_normal(embeddings, data_used_for_demo)[1]))
-    return jsonify(return_cluster_dict(best_scores,q_ids_list))
+    cluster_list = return_cluster_dict(best_scores,q_ids_list)
+    labels = return_cluster_labels_nmi_ngrams_centroid(embeddings, data_used_for_demo, q_ids_list, cluster_list)
+    for cluster_id in cluster_list:
+        q_ids = cluster_list[cluster_id]
+        cluster_label = ' , '.join(labels[cluster_id])
+        output.append({"q_ids":q_ids, "label":cluster_label})
+    return jsonify(output)
     
     
 
