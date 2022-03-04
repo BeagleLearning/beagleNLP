@@ -34,8 +34,8 @@ import logging
 #Loading the USE Model with Tensorflow Hub
 
 try:
-    #embed = hub.load("https://tfhub.dev/google/universal-sentence-encoder-large/5") #For downloading over Net and storing in a Temp Folder, Not Recommended
-    embed = hub.load("USE_Model/") #Download Model and Load Locally - Recommended
+    embed = hub.load("https://tfhub.dev/google/universal-sentence-encoder-large/5") #For downloading over Net and storing in a Temp Folder, Not Recommended
+    #embed = hub.load("USE_Model/") #Download Model and Load Locally - Recommended
     nlp = spacy.load("en_core_web_lg")
     logging.debug('Model Loaded')
 except:
