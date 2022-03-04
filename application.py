@@ -209,10 +209,10 @@ def handleUSECluster3():
     if(len(data_used_for_demo)<50):
         
         best_scores = list(map(int,best_score_HAC_sparse(embeddings, data_used_for_demo, 2)[1]))
-        final_list = return_cluster_dict(best_scores,q_ids_list)
-        labels = return_cluster_labels_nmi_ngrams_centroid(embeddings, data_used_for_demo, q_ids_list, final_list)
-        for cluster_id in final_list:
-            q_ids = final_list[cluster_id]
+        cluster_list = return_cluster_dict(best_scores,q_ids_list)
+        labels = return_cluster_labels_nmi_ngrams_centroid(embeddings, data_used_for_demo, q_ids_list, cluster_list)
+        for cluster_id in cluster_list:
+            q_ids = cluster_list[cluster_id]
             cluster_label = ' , '.join(labels[cluster_id])
             output.append({"q_ids":q_ids, "label":cluster_label})
         return jsonify(output)
@@ -221,10 +221,10 @@ def handleUSECluster3():
     else:
         
         best_scores = list(map(int,get_best_HAC_normal(embeddings, data_used_for_demo)[1]))
-        final_list = return_cluster_dict(best_scores,q_ids_list)
-        labels = return_cluster_labels_nmi_ngrams_centroid(embeddings, data_used_for_demo, q_ids_list, final_list)
-        for cluster_id in final_list:
-            q_ids = final_list[cluster_id]
+        cluster_list = return_cluster_dict(best_scores,q_ids_list)
+        labels = return_cluster_labels_nmi_ngrams_centroid(embeddings, data_used_for_demo, q_ids_list, cluster_list)
+        for cluster_id in cluster_list:
+            q_ids = cluster_list[cluster_id]
             cluster_label = ' , '.join(labels[cluster_id])
             output.append({"q_ids":q_ids, "label":cluster_label})
         return jsonify(output)

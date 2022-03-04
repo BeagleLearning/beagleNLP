@@ -36,6 +36,7 @@ import logging
 try:
     #os.environ['TFHUB_CACHE_DIR'] = "C:/Users/arazs/Documents/GitHub/beagleNLP/test_hub"
     embed = hub.load("https://tfhub.dev/google/universal-sentence-encoder-large/5")
+    #embed = hub.load("USE_Model/")
     nlp = spacy.load("en_core_web_lg")
     logging.debug('Model Loaded')
 except:
@@ -372,14 +373,14 @@ def return_cluster_labels_nmi_ngrams_centroid(embeddings,qs_list,q_ids_list,clus
     
     cluster_objs, lemmatized_qs_list = generate_modified_qs_data(labelling_corpus.documents, clusters, q_ids_list,1)
     global_keywords = generate_global_keywords(labelling_corpus.documents, 1)
-    vecs = embed(list(global_keywords))
-    scores_1gram = calculate_label_score(cluster_objs, vecs, global_keywords, lemmatized_qs_list)
+    global_keyword_embeddings = embed(list(global_keywords))
+    scores_1gram = calculate_label_score(cluster_objs, global_keyword_embeddings, global_keywords, lemmatized_qs_list)
     
     
     cluster_objs, lemmatized_qs_list = generate_modified_qs_data(labelling_corpus.documents, clusters, q_ids_list,2)
     global_keywords = generate_global_keywords(labelling_corpus.documents, 2)
-    vecs = embed(list(global_keywords))
-    scores_2gram = calculate_label_score(cluster_objs, vecs, global_keywords, lemmatized_qs_list)
+    global_keyword_embeddings = embed(list(global_keywords))
+    scores_2gram = calculate_label_score(cluster_objs, global_keyword_embeddings, global_keywords, lemmatized_qs_list)
     
     combined_scores = []
     for score_1gram, score_2gram in zip(scores_1gram, scores_2gram):
@@ -556,7 +557,7 @@ def generate_ngrams(n, words_list):
 4. Calculate the centroids for each cluster, from the USE embeddings
     >centroids
 5. Embeddings for all the global keywords
-    >vecs
+    >global_keyword_embeddings
 :The inputs required are taken from the inputs of the parent function and an additional 'phrase_len' to tell number of grams  
 """
 
@@ -634,7 +635,7 @@ def generate_global_keywords(documents, keyword_length):
 : The cluster object has attributes: centroid of cluster, raw text questions, lemmatized questions
 """
 
-def calculate_label_score(cluster_objects, vecs, global_keywords, lemmatized_qs_list):
+def calculate_label_score(cluster_objects, global_keyword_embeddings, global_keywords, lemmatized_qs_list):
     #For each term and each cluster, get frequencies over all qs present in our corpus (NMI)
     num_clus = len(cluster_objects)
     all_cluster_scores = []
@@ -642,11 +643,11 @@ def calculate_label_score(cluster_objects, vecs, global_keywords, lemmatized_qs_
         modified_clus_qs = cluster_objects[cluster_index]["keyword_questions"] #clus_qs list of qs from the modified cluster 
         og_clus_qs = cluster_objects[cluster_index]["original_clustered_qs"]
         centroid = cluster_objects[cluster_index]["centroid"]
-        vec_to_centroid = centroid - vecs
+        vec_to_centroid = centroid - global_keyword_embeddings
         distances = np.linalg.norm(vec_to_centroid, axis=1)
         logging.debug("Total number of Keywords:",len(distances))
-        gloabl_min_distance = min(distances)
-        logging.debug("Global Minimum Distance for cluster:",gloabl_min_distance)
+        global_min_distance = min(distances)
+        logging.debug("Global Minimum Distance for cluster:",global_min_distance)
     
         NMI_scores = compute_nmi_metrics(global_keywords, lemmatized_qs_list, modified_clus_qs)
 
@@ -654,7 +655,7 @@ def calculate_label_score(cluster_objects, vecs, global_keywords, lemmatized_qs_
         logging.debug("Maximum NMI Score in Cluster:",max_NMI)
         logging.debug("Length of score list:",len(NMI_scores))
         assert_equal(len(NMI_scores),len(distances)) #Making sure equal lenghts for math to work out xD
-        new_score = [[x[0],x[1] + (1/d)*gloabl_min_distance*max_NMI*0.5] for x,d in zip(NMI_scores,distances)]
+        new_score = [[x[0],x[1] + (1/d)*global_min_distance*max_NMI*0.5] for x,d in zip(NMI_scores,distances)]
         new_score.sort(key = lambda x: x[1], reverse=True)
         logging.debug("New Score based Labels:",new_score[:5])
         logging.debug("Cluster Qs:",og_clus_qs)
