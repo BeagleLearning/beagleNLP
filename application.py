@@ -205,6 +205,10 @@ def handleUSECluster2():
 
     
 """CUSTOM ROUTE 3: Condition Based HAC"""
+"""This route calls Sparse Clustering for less than 50 Questions and Normal Clustering if greater than 50 Questions. 
+It was observed that the Sparse Clustering Code developed by Araz, where we make the distance matrix sparse, produces more 
+rounded and equal clusters, which are better with lower number of questions. In normal clustering, we see that more extreme clusters
+are produced, which are helpful for greater number of questions"""
 @application.route("/usecondition/", methods=["POST"])
 
 def handleUSECluster3():
@@ -218,28 +222,14 @@ def handleUSECluster3():
     
     embeddings, data_used_for_demo, q_ids_list = get_data_embeddings(data)
     output = []
-    if(len(data_used_for_demo)<50):
-        
-        best_scores = list(map(int,best_score_HAC_sparse(embeddings, data_used_for_demo, 2)[1]))
-        cluster_list = return_cluster_dict(best_scores,q_ids_list)
-        labels = return_cluster_labels_nmi_ngrams_centroid(embeddings, data_used_for_demo, q_ids_list, cluster_list)
-        for cluster_id in cluster_list:
-            q_ids = cluster_list[cluster_id]
-            cluster_label = ' , '.join(labels[cluster_id])
-            output.append({"q_ids":q_ids, "label":cluster_label})
-        return jsonify(output)
-    
-        
-    else:
-        
-        best_scores = list(map(int,get_best_HAC_normal(embeddings, data_used_for_demo)[1]))
-        cluster_list = return_cluster_dict(best_scores,q_ids_list)
-        labels = return_cluster_labels_nmi_ngrams_centroid(embeddings, data_used_for_demo, q_ids_list, cluster_list)
-        for cluster_id in cluster_list:
-            q_ids = cluster_list[cluster_id]
-            cluster_label = ' , '.join(labels[cluster_id])
-            output.append({"q_ids":q_ids, "label":cluster_label})
-        return jsonify(output)
+    best_scores = list(map(int,best_score_HAC_sparse(embeddings, data_used_for_demo, 2)[1])) if len(data_used_for_demo) < 50 else list(map(int,get_best_HAC_normal(embeddings, data_used_for_demo)[1]))
+    cluster_list = return_cluster_dict(best_scores,q_ids_list)
+    labels = return_cluster_labels_nmi_ngrams_centroid(embeddings, data_used_for_demo, q_ids_list, cluster_list)
+    for cluster_id in cluster_list:
+        q_ids = cluster_list[cluster_id]
+        cluster_label = ' , '.join(labels[cluster_id])
+        output.append({"q_ids":q_ids, "label":cluster_label})
+    return jsonify(output)
     
         
 
