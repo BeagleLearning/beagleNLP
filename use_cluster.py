@@ -450,14 +450,12 @@ def return_best_label_combination(label_scores):
         if(label_1_type==1 and label_2_type==2):
             if(label_1 not in label_2):
                 final_labels.append([label_1, label_2])
+            elif(label_3_type==2):
+                final_labels.append([label_2, label_3])
+            elif(label_3 not in label_2):
+                final_labels.append([label_2, label_3])
             else:
-                if(label_3_type==2):
-                    final_labels.append([label_2, label_3])
-                else:
-                    if(label_3 not in label_2):
-                        final_labels.append([label_2, label_3])
-                    else:
-                        final_labels.append([label_2, label_4])
+                final_labels.append([label_2, label_4])
 
         #CASE II label_1 1 gram label_2 1 gram
 
@@ -505,14 +503,12 @@ def return_best_label_combination(label_scores):
         elif(label_1_type==2 and label_2_type==1):
             if(label_2 not in label_1):
                 final_labels.append([label_1, label_2])
+            elif(label_3_type==2):
+                final_labels.append([label_1, label_3])
+            elif(label_3 not in label_1):
+                final_labels.append([label_1, label_3])
             else:
-                if(label_3_type==2):
-                    final_labels.append([label_1, label_3])
-                else:
-                    if(label_3 not in label_1):
-                        final_labels.append([label_1, label_3])
-                    else:
-                        final_labels.append([label_1, label_4])
+                final_labels.append([label_1, label_4])
 
         #CASE IV label_1 2 gram label_2 2 gram
 
