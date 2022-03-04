@@ -445,27 +445,22 @@ def return_best_label_combination(label_scores):
 
         if(label_1_type==1 and label_2_type==2):
             if(label_1 not in label_2):
-                selected = [label_1, label_2]
-                final_labels.append(selected)
+                final_labels.append([label_1, label_2])
             else:
                 if(label_3_type==2):
-                    selected = [label_2, label_3]
-                    final_labels.append(selected)
+                    final_labels.append([label_2, label_3])
                 else:
                     if(label_3 not in label_2):
-                        selected = [label_2, label_3]
-                        final_labels.append(selected)
+                        final_labels.append([label_2, label_3])
                     else:
-                        selected = [label_2, label_4]
-                        final_labels.append(selected)
+                        final_labels.append([label_2, label_4])
 
         #CASE II label_1 1 gram label_2 1 gram
 
         elif(label_1_type==1 and label_2_type==1):
             if(label_3_type==1):
                 if(label_4_type==1):
-                    selected = [label_1, label_2]
-                    final_labels.append(selected)
+                    final_labels.append([label_1, label_2])
                 else:
                     label_in_word = []
                     if(label_1 in label_4):
@@ -476,8 +471,7 @@ def return_best_label_combination(label_scores):
                         label_in_word.append(label_3)
                     
                     if(len(label_in_word)==0):
-                        selected = [label_1, label_2]
-                        final_labels.append(selected)
+                        final_labels.append([label_1, label_2])
                     else:
                         selected = [label_1, label_2, label_3, label_4]
                         for label in label_in_word:
@@ -492,8 +486,7 @@ def return_best_label_combination(label_scores):
                     label_in_word.append(label_2)
 
                 if(len(label_in_word)==0):
-                    selected = [label_1, label_2]
-                    final_labels.append(selected)
+                    final_labels.append([label_1, label_2])
                 else:
                     if(len(label_in_word)==1):
                         selected = [label_1, label_2, label_3]
@@ -501,32 +494,26 @@ def return_best_label_combination(label_scores):
                             selected.remove(label)
                         final_labels.append(selected)
                     else:
-                        selected = [label_3, label_4]
-                        final_labels.append(selected)
+                        final_labels.append([label_3, label_4])
 
         #CASE III label_1 2 gram label_2 1 gram
 
         elif(label_1_type==2 and label_2_type==1):
             if(label_2 not in label_1):
-                selected = [label_1, label_2]
-                final_labels.append(selected)
+                final_labels.append([label_1, label_2])
             else:
                 if(label_3_type==2):
-                    selected = [label_1, label_3]
-                    final_labels.append(selected)
+                    final_labels.append([label_1, label_3])
                 else:
                     if(label_3 not in label_1):
-                        selected = [label_1, label_3]
-                        final_labels.append(selected)
+                        final_labels.append([label_1, label_3])
                     else:
-                        selected = [label_1, label_4]
-                        final_labels.append(selected)
+                        final_labels.append([label_1, label_4])
 
         #CASE IV label_1 2 gram label_2 2 gram
 
         else:
-            selected = [label_1, label_2]
-            final_labels.append(selected)
+            final_labels.append([label_1, label_2])
 
     return final_labels
 
