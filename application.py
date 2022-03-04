@@ -168,11 +168,11 @@ def handleUSECluster():
         raise BeagleError(errors.TOO_FEW_QUESTIONS)
     
     
-    embeddings, data_used_for_demo, q_ids_list = get_data_embeddings(data)
+    embeddings, questions_text, q_ids_list = get_data_embeddings(data)
     output = []
-    best_scores = list(map(int,best_score_HAC_sparse(embeddings, data_used_for_demo, 2)[1]))
+    best_scores = list(map(int,best_score_HAC_sparse(embeddings, questions_text, 2)[1]))
     cluster_list = return_cluster_dict(best_scores,q_ids_list)
-    labels = return_cluster_labels_nmi_ngrams_centroid(embeddings, data_used_for_demo, q_ids_list, cluster_list)
+    labels = return_cluster_labels_nmi_ngrams_centroid(embeddings, questions_text, q_ids_list, cluster_list)
     for cluster_id in cluster_list:
         q_ids = cluster_list[cluster_id]
         cluster_label = ' , '.join(labels[cluster_id])
@@ -190,11 +190,11 @@ def handleUSECluster2():
     if(len(data) < 6):
         raise BeagleError(errors.TOO_FEW_QUESTIONS)
     
-    embeddings, data_used_for_demo, q_ids_list = get_data_embeddings(data)
+    embeddings, questions_text, q_ids_list = get_data_embeddings(data)
     output = []
-    best_scores = list(map(int,get_best_HAC_normal(embeddings, data_used_for_demo)[1]))
+    best_scores = list(map(int,get_best_HAC_normal(embeddings, questions_text)[1]))
     cluster_list = return_cluster_dict(best_scores,q_ids_list)
-    labels = return_cluster_labels_nmi_ngrams_centroid(embeddings, data_used_for_demo, q_ids_list, cluster_list)
+    labels = return_cluster_labels_nmi_ngrams_centroid(embeddings, questions_text, q_ids_list, cluster_list)
     for cluster_id in cluster_list:
         q_ids = cluster_list[cluster_id]
         cluster_label = ' , '.join(labels[cluster_id])
@@ -220,11 +220,11 @@ def handleUSECluster3():
     if(len(data) < 6):
         raise BeagleError(errors.TOO_FEW_QUESTIONS) #Communicate we don't support
     
-    embeddings, data_used_for_demo, q_ids_list = get_data_embeddings(data)
+    embeddings, questions_text, q_ids_list = get_data_embeddings(data)
     output = []
-    best_scores = list(map(int,best_score_HAC_sparse(embeddings, data_used_for_demo, 2)[1])) if len(data_used_for_demo) < 50 else list(map(int,get_best_HAC_normal(embeddings, data_used_for_demo)[1]))
+    best_scores = list(map(int,best_score_HAC_sparse(embeddings, questions_text, 2)[1])) if len(questions_text) < 50 else list(map(int,get_best_HAC_normal(embeddings, questions_text)[1]))
     cluster_list = return_cluster_dict(best_scores,q_ids_list)
-    labels = return_cluster_labels_nmi_ngrams_centroid(embeddings, data_used_for_demo, q_ids_list, cluster_list)
+    labels = return_cluster_labels_nmi_ngrams_centroid(embeddings, questions_text, q_ids_list, cluster_list)
     for cluster_id in cluster_list:
         q_ids = cluster_list[cluster_id]
         cluster_label = ' , '.join(labels[cluster_id])
