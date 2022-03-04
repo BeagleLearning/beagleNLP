@@ -217,7 +217,6 @@ def handleUSECluster3():
         raise BeagleError(errors.TOO_FEW_QUESTIONS) #Communicate we don't support
     
     embeddings, data_used_for_demo, q_ids_list = get_data_embeddings(data)
-    print("q_ids_list:",q_ids_list)
     output = []
     if(len(data_used_for_demo)<50):
         
