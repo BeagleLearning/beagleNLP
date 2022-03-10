@@ -565,8 +565,8 @@ def generate_modified_qs_data(documents, clusters, q_ids_list, phrase_len):
         for id in clus_q_ids:
             q_index = q_ids_list.index(id)
             clus_embeddings.append(documents[q_index]._.embedding)
-            lemma_q = documents[q_index]._.lemma_list
-            n_grams_for_question = generate_ngrams(phrase_len,lemma_q)
+            lemmatized_question = documents[q_index]._.lemma_list
+            n_grams_for_question = generate_ngrams(phrase_len,lemmatized_question)
             lemmatized_qs_list.append(n_grams_for_question)
             modified_clus_qs.append(n_grams_for_question) #Adding modified question to new formed cluster of modified questions
             og_clus_qs.append(documents[q_index]._.raw_text)
@@ -643,7 +643,7 @@ def calculate_label_score(cluster_objects, global_keyword_embeddings, global_key
         logging.debug("Length of score list:",len(NMI_scores))
         assert_equal(len(NMI_scores),len(distances)) #Making sure equal lenghts for math to work out xD
         #new_score = [[x[0],x[1] + (1/d)*global_min_distance*max_NMI*0.5] for x,d in zip(NMI_scores,distances)]
-        new_score = compute_new_score(NMI_scores, distances, max_NMI, global_min_distance)
+        new_score = compute_distance_nmi_score(NMI_scores, distances, max_NMI, global_min_distance)
         new_score.sort(key = lambda x: x[1], reverse=True)
         logging.debug("New Score based Labels:",new_score[:5])
         logging.debug("Cluster Qs:",og_clus_qs)
@@ -677,10 +677,10 @@ def compute_nmi_metrics(global_keywords, lemmatized_qs_list, clus_qs):
         P_t0_u1 = 0.0
         P_t1_u0 = 0.0
         P_t1_u1 = 0.0
-        for ques in lemmatized_qs_list: #All questions in Corpus
-            if term not in ques:
+        for n_grams_for_question in lemmatized_qs_list: #All questions in Corpus
+            if term not in n_grams_for_question:
                 P_t0+=1
-                if(ques not in clus_qs): #clus_qs list of modified qs
+                if(n_grams_for_question not in clus_qs): #clus_qs list of modified qs
                     P_u0+=1
                     P_t0_u0+=1
                 else:
@@ -688,7 +688,7 @@ def compute_nmi_metrics(global_keywords, lemmatized_qs_list, clus_qs):
                     P_t0_u1+=1
             else:
                 P_t1+=1
-                if(ques not in clus_qs):
+                if(n_grams_for_question not in clus_qs):
                     P_u0+=1
                     P_t1_u0+=1
                     occurences_term_not_in_cluster+=1
@@ -761,7 +761,7 @@ def compute_nmi_metrics(global_keywords, lemmatized_qs_list, clus_qs):
 :The format of NMI_Scores and Distances as is defined in calculate_label_score
 """
 
-def compute_new_score(NMI_Scores, Distances, Max_NMI_Score, Global_Min_Distance):
+def compute_distance_nmi_score(NMI_Scores, Distances, Max_NMI_Score, Global_Min_Distance):
     return [[x[0],x[1] + (1/d)*Global_Min_Distance*Max_NMI_Score*0.5] for x,d in zip(NMI_Scores,Distances)]
 
 
