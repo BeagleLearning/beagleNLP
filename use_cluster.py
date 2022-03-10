@@ -30,6 +30,7 @@ import json
 from beagleError import BeagleError
 import errors
 import logging
+from flask import jsonify
 
 #Loading the USE Model with Tensorflow Hub
 
@@ -765,5 +766,36 @@ def compute_distance_nmi_score(NMI_Scores, Distances, Max_NMI_Score, Global_Min_
     return [[x[0],x[1] + (1/d)*Global_Min_Distance*Max_NMI_Score*0.5] for x,d in zip(NMI_Scores,Distances)]
 
 
+"""
+> The objective of this function is to:
+1. Cluster the input data, generate labels for the clusters and return these in a format, which is jsonified
+    
+2. Takes in the api route type and the input data to be clustered
+
+3. The sparse route uses the HAC Sparsification method, the normal route uses normal HAC & the condition route uses normal if number of data > 50, otherwise the sparse route
+
+4. We use the functions defined in this library, to get embeddings, question text, question ids, cluster scores and cluster labels
+
+:The inputs required are: route type ("condition" or "normal" or "sparse") & data recieved by API
+"""
+
+def return_cluster_output(route, data):
+    embeddings, questions_text, q_ids_list = get_data_embeddings(data)
+    output = []    
+    if(route=="condition"):
+        best_scores = list(map(int,best_score_HAC_sparse(embeddings, questions_text, 2)[1])) if len(questions_text) < 50 else list(map(int,get_best_HAC_normal(embeddings, questions_text)[1]))
+    elif(route=="normal"):
+        best_scores = list(map(int,get_best_HAC_normal(embeddings, questions_text)[1]))
+    elif(route=="sparse"):
+        best_scores = list(map(int,best_score_HAC_sparse(embeddings, questions_text, 2)[1]))
+
+    cluster_list = return_cluster_dict(best_scores,q_ids_list)
+    labels = return_cluster_labels_nmi_ngrams_centroid(embeddings, questions_text, q_ids_list, cluster_list)
+    for cluster_id in cluster_list:
+        q_ids = cluster_list[cluster_id]
+        cluster_label = ' , '.join(labels[cluster_id])
+        output.append({"q_ids":q_ids, "label":cluster_label})
+    return jsonify(output)
+    
 #Command to use with from terminal
 #curl --header "Content-Type:application/json" --request POST --data "@C:\Users\arazs\Documents\Beagle Learning Intern\test_data4.json" http://localhost:5000/usecondition/
