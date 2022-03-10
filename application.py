@@ -8,7 +8,7 @@ import numpy as np
 from build_tag_cluster import buildTagCluster
 from beagleError import BeagleError
 import errors
-from use_cluster import get_data_embeddings, best_score_HAC_sparse, HAC_with_Sparsification, get_best_HAC_normal, return_cluster_dict,return_cluster_labels_nmi_ngrams_centroid
+from use_cluster import return_cluster_output
 import time
 from functools import wraps
 
@@ -167,17 +167,7 @@ def handleUSECluster():
     if(len(data) < 6):
         raise BeagleError(errors.TOO_FEW_QUESTIONS)
     
-    
-    embeddings, questions_text, q_ids_list = get_data_embeddings(data)
-    output = []
-    best_scores = list(map(int,best_score_HAC_sparse(embeddings, questions_text, 2)[1]))
-    cluster_list = return_cluster_dict(best_scores,q_ids_list)
-    labels = return_cluster_labels_nmi_ngrams_centroid(embeddings, questions_text, q_ids_list, cluster_list)
-    for cluster_id in cluster_list:
-        q_ids = cluster_list[cluster_id]
-        cluster_label = ' , '.join(labels[cluster_id])
-        output.append({"q_ids":q_ids, "label":cluster_label})
-    return jsonify(output)
+    return return_cluster_output("sparse", data)
     
 
 """CUSTOM ROUTE 2: Normal HAC"""
@@ -190,16 +180,7 @@ def handleUSECluster2():
     if(len(data) < 6):
         raise BeagleError(errors.TOO_FEW_QUESTIONS)
     
-    embeddings, questions_text, q_ids_list = get_data_embeddings(data)
-    output = []
-    best_scores = list(map(int,get_best_HAC_normal(embeddings, questions_text)[1]))
-    cluster_list = return_cluster_dict(best_scores,q_ids_list)
-    labels = return_cluster_labels_nmi_ngrams_centroid(embeddings, questions_text, q_ids_list, cluster_list)
-    for cluster_id in cluster_list:
-        q_ids = cluster_list[cluster_id]
-        cluster_label = ' , '.join(labels[cluster_id])
-        output.append({"q_ids":q_ids, "label":cluster_label})
-    return jsonify(output)
+    return return_cluster_output("normal", data)
     
     
 
@@ -220,17 +201,8 @@ def handleUSECluster3():
     if(len(data) < 6):
         raise BeagleError(errors.TOO_FEW_QUESTIONS) #Communicate we don't support
     
-    embeddings, questions_text, q_ids_list = get_data_embeddings(data)
-    output = []
-    best_scores = list(map(int,best_score_HAC_sparse(embeddings, questions_text, 2)[1])) if len(questions_text) < 50 else list(map(int,get_best_HAC_normal(embeddings, questions_text)[1]))
-    cluster_list = return_cluster_dict(best_scores,q_ids_list)
-    labels = return_cluster_labels_nmi_ngrams_centroid(embeddings, questions_text, q_ids_list, cluster_list)
-    for cluster_id in cluster_list:
-        q_ids = cluster_list[cluster_id]
-        cluster_label = ' , '.join(labels[cluster_id])
-        output.append({"q_ids":q_ids, "label":cluster_label})
-    return jsonify(output)
-    
+    return return_cluster_output("condition", data)
+
         
 
 
