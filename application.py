@@ -2,7 +2,7 @@
 """ Flask application for Beagle's NLP analysis """
 import os
 import logging
-from flask import Flask, request, jsonify, send_file, g
+from flask import Flask, request, jsonify, send_file, Response
 import analysis
 import numpy as np
 from build_tag_cluster import buildTagCluster
@@ -12,6 +12,7 @@ from use_cluster import return_cluster_output
 import time
 from functools import wraps
 
+from Question_Categorization.cluster_or_tag import FinalAlgorithms
 
 if "PYTHON_ENVIRONMENT" in os.environ.keys() and os.environ['PYTHON_ENVIRONMENT'] == "production":
     logging.basicConfig(
@@ -25,6 +26,15 @@ END_OF_PAGE = '</body>\n</html>'
 
 # EB looks for an 'application' callable by default.
 application = Flask(__name__, static_url_path='/static/')
+
+# Checks that the data passed to the categorization routes are valid.
+def assert_valid_params_for_categorization(data):
+    if "questions" not in data:
+        raise BeagleError(errors.MISSING_PARAMETERS_FOR_ROUTE)
+
+    if len(data["questions"]) < 2:
+        raise BeagleError(errors.TOO_FEW_QUESTIONS)
+    
 
 application.logger.info("Flask app created!")
 
@@ -57,6 +67,33 @@ def time_this(func):
 def index_route():
     """ Confirms the app is running """
     return HEADER_TEXT + "Welcome to the Beagle NLP API" + END_OF_PAGE
+
+
+@application.route("/cluster-questions", methods=["POST"])
+def clustering():
+    """Encodes the set of questions using Universal Sentence Encoder and clusters them hierarchically (agglomerative). Uses sklearn's module."""
+    data = request.get_json()
+    assert_valid_params_for_categorization(data)
+    questions = data['questions']
+    try:
+        clusters = FinalAlgorithms().clustering(questions)
+        return jsonify(clusters)
+    except Exception as e:
+        application.logger.error(e)
+        return Response(response = str(e), status = 500)
+
+@application.route("/tag-questions", methods=["POST"])
+def tagging():
+    """Tags questions using Complement Naive Bayes and LDA."""
+    data = request.get_json()
+    assert_valid_params_for_categorization(data)
+    questions = data['questions']
+    try:
+        tagged_questions = FinalAlgorithms().tagging(questions)
+        return jsonify(tagged_questions)
+    except Exception as e: 
+        application.logger.error(e)
+        return Response(response = str(e), status = 500)
 
 
 @application.route("/playground", methods=["GET"])
